@@ -1,17 +1,32 @@
-import { Button } from '@/components/ui/button'
+import { useState } from 'react'
+
+import { AppShell } from '@/components/layout/AppShell'
+import type { PageId } from '@/components/layout/navigation'
+import { CleanSpreadsheetPage } from '@/pages/CleanSpreadsheetPage'
+import { DashboardPage } from '@/pages/DashboardPage'
+import { DataQualityPage } from '@/pages/DataQualityPage'
+import { HelpPage } from '@/pages/HelpPage'
+
+function renderPage(page: PageId) {
+  switch (page) {
+    case 'dashboard':
+      return <DashboardPage />
+    case 'clean':
+      return <CleanSpreadsheetPage />
+    case 'quality':
+      return <DataQualityPage />
+    case 'help':
+      return <HelpPage />
+  }
+}
 
 function App() {
+  const [page, setPage] = useState<PageId>('dashboard')
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
-      <div className="max-w-md rounded-lg border border-slate-200 bg-white p-8 shadow-sm">
-        <h1 className="text-2xl font-semibold text-slate-900">CleanSheet</h1>
-        <p className="mt-2 text-slate-600">
-          Tailwind CSS and shadcn/ui are working. Clean your spreadsheets
-          without writing formulas.
-        </p>
-        <Button className="mt-6">Test button</Button>
-      </div>
-    </div>
+    <AppShell currentPage={page} onNavigate={setPage}>
+      {renderPage(page)}
+    </AppShell>
   )
 }
 
