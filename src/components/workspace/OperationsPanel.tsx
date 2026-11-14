@@ -2,21 +2,19 @@ import { Button } from '@/components/ui/button'
 import { OPERATION_GROUPS } from '@/components/workspace/operations'
 
 interface OperationsPanelProps {
-  disabled: boolean
+  /** Explains why the operations are unavailable. */
+  notice: string
 }
 
-export function OperationsPanel({ disabled }: OperationsPanelProps) {
+// Every operation stays disabled until its module is built (Phase 5).
+export function OperationsPanel({ notice }: OperationsPanelProps) {
   return (
     <section
       aria-label="Operations"
       className="rounded-lg border bg-card p-4 text-card-foreground"
     >
       <h2 className="text-sm font-semibold text-foreground">Operations</h2>
-      {disabled && (
-        <p className="mt-1 text-xs text-muted-foreground">
-          Available after you upload a spreadsheet.
-        </p>
-      )}
+      <p className="mt-1 text-xs text-muted-foreground">{notice}</p>
       <div className="mt-4 space-y-5">
         {OPERATION_GROUPS.map((group) => (
           <div key={group.title}>
@@ -32,7 +30,7 @@ export function OperationsPanel({ disabled }: OperationsPanelProps) {
                     type="button"
                     variant="ghost"
                     className="justify-start"
-                    disabled={disabled}
+                    disabled
                   >
                     <Icon aria-hidden="true" />
                     {item.label}

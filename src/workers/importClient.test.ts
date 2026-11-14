@@ -2,38 +2,19 @@
 import { describe, expect, it } from 'vitest'
 
 import { ImportError } from '@/engine/io/types'
+import { HandlerWorker } from '@/test/handlerWorker'
 import {
     createImportClient,
     ImportCancelledError,
     type WorkerLike,
 } from '@/workers/importClient'
-import { createImportHandler } from '@/workers/importHandler'
-import type { WorkerRequest, WorkerResponse } from '@/workers/protocol'
+import type { WorkerResponse } from '@/workers/protocol'
 
 function csv(text: string): ArrayBuffer {
     const bytes = new TextEncoder().encode(text)
     const copy = new ArrayBuffer(bytes.byteLength)
     new Uint8Array(copy).set(bytes)
     return copy
-}
-
-/** Stands in for a browser Worker by running the real handler directly. */
-class HandlerWorker implements WorkerLike {
-    onmessage: ((event: MessageEvent<WorkerResponse>) => void) | null = null
-    onerror: ((event: ErrorEvent) => void) | null = null
-    terminated = false
-    private readonly handle = createImportHandler()
-
-    postMessage(message: WorkerRequest): void {
-        const response = this.handle(message)
-        queueMicrotask(() => {
-            this.onmessage?.({ data: response } as MessageEvent<WorkerResponse>)
-        })
-    }
-
-    terminate(): void {
-        this.terminated = true
-    }
 }
 
 /** A worker that never answers, so a request stays pending until stopped. */

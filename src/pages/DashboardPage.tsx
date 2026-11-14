@@ -3,14 +3,16 @@ import {
     Columns3,
     Copy,
     Eraser,
+    FileSpreadsheet,
     ShieldCheck,
     Type,
     Undo2,
-    FileSpreadsheet,
     type LucideIcon,
 } from 'lucide-react'
 
+import { FileSummaryCard } from '@/components/workspace/FileSummaryCard'
 import { UploadDropzone } from '@/components/workspace/UploadDropzone'
+import type { SpreadsheetSession } from '@/hooks/useSpreadsheetSession'
 
 interface Capability {
     title: string
@@ -56,7 +58,14 @@ const CAPABILITIES: readonly Capability[] = [
     },
 ]
 
-export function DashboardPage() {
+interface DashboardPageProps {
+    session: SpreadsheetSession
+    onOpenWorkspace: () => void
+}
+
+export function DashboardPage({ session, onOpenWorkspace }: DashboardPageProps) {
+    const loading = session.status === 'loading'
+
     return (
         <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:py-12">
             <section className="text-center">
@@ -68,8 +77,26 @@ export function DashboardPage() {
                 </p>
             </section>
 
-            <div className="mt-8">
-                <UploadDropzone />
+            <div className="mt-8 space-y-4">
+                <UploadDropzone
+                    loading={loading}
+                    error={session.error}
+                    onFile={(file) => {
+                        void session.loadFile(file)
+                    }}
+                    onCancel={session.reset}
+                />
+                {session.summary !== null && (
+                    <FileSummaryCard
+                        summary={session.summary}
+                        busy={loading}
+                        onSelectSheet={(sheetName) => {
+                            void session.selectSheet(sheetName)
+                        }}
+                        onReset={session.reset}
+                        onOpenWorkspace={onOpenWorkspace}
+                    />
+                )}
             </div>
 
             <section className="mt-12">

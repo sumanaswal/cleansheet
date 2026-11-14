@@ -1,5 +1,7 @@
 import { ClipboardCheck } from 'lucide-react'
 
+import type { DatasetSummary } from '@/workers/protocol'
+
 const METRICS = [
     'Total rows',
     'Total columns',
@@ -9,7 +11,11 @@ const METRICS = [
     'Empty columns',
 ] as const
 
-export function DataQualityPage() {
+interface DataQualityPageProps {
+    summary: DatasetSummary | null
+}
+
+export function DataQualityPage({ summary }: DataQualityPageProps) {
     return (
         <div className="mx-auto w-full max-w-5xl px-4 py-8">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">
@@ -28,13 +34,26 @@ export function DataQualityPage() {
                     className="size-10 text-muted-foreground"
                     aria-hidden="true"
                 />
-                <p className="mt-3 font-medium text-foreground">
-                    No spreadsheet loaded
-                </p>
-                <p className="mt-1 max-w-md text-sm text-muted-foreground">
-                    Upload an XLSX or CSV file from the Dashboard to see its quality
-                    summary here.
-                </p>
+                {summary === null ? (
+                    <>
+                        <p className="mt-3 font-medium text-foreground">
+                            No spreadsheet loaded
+                        </p>
+                        <p className="mt-1 max-w-md text-sm text-muted-foreground">
+                            Upload an XLSX or CSV file from the Dashboard to see its quality
+                            summary here.
+                        </p>
+                    </>
+                ) : (
+                    <>
+                        <p className="mt-3 break-all font-medium text-foreground">
+                            {`Spreadsheet loaded: ${summary.source.name}`}
+                        </p>
+                        <p className="mt-1 max-w-md text-sm text-muted-foreground">
+                            The quality analysis is added in the next development phase.
+                        </p>
+                    </>
+                )}
             </section>
 
             <section className="mt-8">
