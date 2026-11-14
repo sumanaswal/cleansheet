@@ -41,3 +41,35 @@ Status: complete. Commits `742cf1e`, `b74c75e`.
 - Licenses of all dependencies (verified only from general knowledge so far). Scheduled for the Phase 9 audit.
 - No spreadsheet library chosen yet. Decision, with license comparison, is due in Phase 3.
 - Network behaviour (no spreadsheet data leaves the device) not yet verified. Scheduled for Phase 8.
+
+## Phase 2: UI foundation (2026-11-14)
+
+Status: complete (no spreadsheet processing yet, by design).
+
+### What was built
+
+- CleanSheet theme in `src/index.css`: white surfaces, navy primary, steel-blue focus ring and accents, blue-tinted neutrals. The unused shadcn `.dark` block is left in place and is never activated.
+- Branding: tab title "CleanSheet" and a simple navy checkmark favicon (placeholder, to be replaced by a real logo later).
+- App shell with a four-item navigation (Dashboard, Clean Spreadsheet, Data Quality, About / Help). Labels collapse to icons below 640 px.
+- Dashboard: headline, upload area, six capability cards, privacy note and scope note.
+- Cleaning workspace shell: operations panel, preview panel and settings panel.
+- Data Quality page (empty state with the six planned figures) and About / Help page.
+- Tests for navigation and for each page.
+
+### Decisions
+
+- **No router library.** The current page is held in React state in `App.tsx`. Trade-off: the browser Back button does not switch pages and pages cannot be bookmarked. `react-router` (MIT) can be added later with a small refactor.
+- **Nothing is shown as working before it works.** The upload button and all 11 operation buttons are disabled, with notes explaining why. They are enabled in Phases 3 and 5.
+- **Privacy wording says "designed to".** Stronger claims wait for the network inspection in Phase 8.
+- **File size and row limits are not shown in the UI** until they are validated in Phase 3.
+- **Mobile layout:** the spreadsheet preview is shown first on narrow screens, then the operations list, then the settings.
+
+### Verified at end of Phase 2
+
+- `npx tsc -b`, `npm run lint`, `npm test` and `npm run build` pass.
+- Navigation, active-tab highlighting and the icon-only mode on narrow windows confirmed by hand.
+
+### Not yet done or verified
+
+- Dependency licenses, spreadsheet library choice, network behaviour: unchanged from Phase 1.
+- Dashboard and workspace layouts on real phones and tablets (only a resized desktop window was used).

@@ -1,75 +1,47 @@
-# React + TypeScript + Vite
+# CleanSheet
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A browser-based spreadsheet cleaning tool for office employees who work with Excel and CSV files. It is designed to run entirely on your own computer, with no account and no server.
 
-Currently, two official plugins are available:
+**Status:** under development. The interface exists; spreadsheet import and cleaning are being built phase by phase. See `DEVELOPMENT_LOG.md` for what is done.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Requirements
 
-## React Compiler
+- Windows 11 (other systems are untested)
+- Node.js and npm (developed on Node 24.19.0 and npm 11.17.0)
+- A modern browser such as Chrome or Edge
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Setup
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```powershell
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+Then open http://localhost:5173/ in your browser.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Scripts
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+| Command | What it does |
+|---|---|
+| `npm run dev` | Start the development server |
+| `npm run build` | Type-check and create a production build in `dist/` |
+| `npm run preview` | Serve the production build locally |
+| `npm run lint` | Run ESLint |
+| `npm test` | Run all tests once |
+| `npm run test:watch` | Re-run tests when files change |
 
-```
+## Project structure
+
+- `src/engine/` is the cleaning logic, plain TypeScript with no React. It must not import UI code (enforced by ESLint).
+- `src/components/`, `src/pages/`, `src/hooks/` are the interface.
+- `src/workers/` is for background processing (Phase 3 onwards).
+- Tests sit next to the code they test.
+
+## Privacy
+
+CleanSheet is designed to process spreadsheets inside the browser. This design intent has not yet been verified by network inspection (planned for Phase 8), so no stronger claim is made here.
+
+## Other documents
+
+- `DEVELOPMENT_LOG.md`: completed phases and decisions
+- `KNOWN_ISSUES.md`: open problems and limitations
