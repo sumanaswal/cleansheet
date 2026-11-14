@@ -28,6 +28,11 @@ function startsWith(bytes: Uint8Array, signature: readonly number[]): boolean {
     return signature.every((byte, index) => bytes[index] === byte)
 }
 
+/** True when the bytes start like a ZIP archive, which every .xlsx file does. */
+export function hasZipSignature(bytes: Uint8Array): boolean {
+    return startsWith(bytes, ZIP_SIGNATURE)
+}
+
 function getExtension(fileName: string): string {
     const dot = fileName.lastIndexOf('.')
     return dot <= 0 ? '' : fileName.slice(dot + 1).toLowerCase()
@@ -97,21 +102,28 @@ export function validateFile(
     )
 }
 
-/** Checks a parsed dataset against the row and column limits. */
-export function validateDatasetLimits(
-    dataset: Dataset,
+/** Checks a sheet's size against the row and column limits. */
+export function validateSheetSize(
+    dataRows: number,
+    columns: number,
     limits: ImportLimits = IMPORT_LIMITS,
 ): void {
-    const columns = dataset.columns.length
-    const rows = dataset.rows.length
     if (columns > limits.maxColumns) {
         throw new ImportError(
             `The sheet has ${columns.toLocaleString('en-US')} columns. CleanSheet currently supports up to ${limits.maxColumns.toLocaleString('en-US')} columns.`,
         )
     }
-    if (rows > limits.maxRows) {
+    if (dataRows > limits.maxRows) {
         throw new ImportError(
-            `The sheet has ${rows.toLocaleString('en-US')} data rows. CleanSheet currently supports up to ${limits.maxRows.toLocaleString('en-US')} rows.`,
+            `The sheet has ${dataRows.toLocaleString('en-US')} data rows. CleanSheet currently supports up to ${limits.maxRows.toLocaleString('en-US')} rows.`,
         )
     }
+}
+
+/** Checks a parsed dataset against the row and column limits. */
+export function validateDatasetLimits(
+    dataset: Dataset,
+    limits: ImportLimits = IMPORT_LIMITS,
+): void {
+    validateSheetSize(dataset.rows.length, dataset.columns.length, limits)
 }
