@@ -2,33 +2,75 @@
 
 ## Open
 
-### 1. npm audit reports 12 vulnerabilities in development tooling only
+### 1. SheetJS is not covered by `npm audit`
 
-- 12 findings (2 low, 10 moderate) as of the end of Phase 1.
-- Two dependency chains: `minimatch` through `typescript-eslint` (linting), and `deepmerge`, `ts-morph` and `minimatch` through the `shadcn` command-line tool.
-- All are development tools that run on the developer's computer and are not part of the production bundle.
-- `npm audit --omit=dev` reports 0 vulnerabilities. A search of the built JavaScript found none of the affected packages.
+- SheetJS 0.20.3 is installed from `vendor/xlsx-0.20.3.tgz`, so npm's advisory database does not track it.
+- Action: before the Phase 9 release, check SheetJS's site for a newer release and for new advisories, and re-run the library behaviour tests in `src/engine/io/xlsx-library.test.ts` after any upgrade.
+- The tarball's checksum is recorded in DEVELOPMENT_LOG.md. It detects later changes only.
+
+### 2. npm audit reports vulnerabilities in development tooling only
+
+- At the end of Phase 1: 12 findings (2 low, 10 moderate) in two chains, `minimatch` through `typescript-eslint` (linting) and `deepmerge`, `ts-morph` and `minimatch` through the `shadcn` command-line tool.
+- They are development tools that run on the developer's computer and are not part of the production bundle. `npm audit --omit=dev` reported 0 vulnerabilities then, and a search of the built JavaScript found none of the affected packages.
 - Do not run `npm audit fix --force`: it proposes downgrading `shadcn` to 1.0.0 and `typescript-eslint` to 8.36.0.
-- Action: re-run `npm audit` and `npm audit --omit=dev` before the Phase 9 release, and update the tooling if patched versions exist.
+- Action: re-run `npm audit` and `npm audit --omit=dev` before the Phase 9 release. The numbers may have changed since Phase 3 added packages.
 
-### 2. Dependency licenses not yet audited
+### 3. Large-file behaviour is unmeasured
+
+- The community edition of SheetJS has no streaming, so a whole file is held in memory while it is read, and the loaded dataset stays in the worker.
+- The 10 MB, 50,000-row and 100-column limits are initial proposals, not tested limits.
+- Action: measure time and memory with the generated 5,000, 25,000 and 50,000-row files in Phase 8, then confirm or change the limits.
+
+### 4. If the background worker crashes, the screen can show a file whose data is gone
+
+- The worker holds the dataset. If it crashes, the screen can still show the file as loaded, and the data table shows an error asking the user to remove the file and upload it again.
+- Accepted for now. Revisit when undo history is added in Phase 6.
+
+### 5. Cancelling an import also discards an already loaded spreadsheet
+
+- Stopping a parser that may be hung requires stopping the worker, which discards its data.
+
+### 6. XLSX import limits
+
+- The header is assumed to be the first row with content. There is no option to choose another row.
+- Merged cells: only the top-left cell holds a value. This is reported in the import notes.
+- Formulas are imported as their last calculated values. This is reported.
+- Dates are recognised only through Excel's cell format. Dates stored as text stay text, in XLSX and CSV.
+- Hidden worksheets, hidden rows and filtered rows are not treated specially. Untested.
+- Only .xlsx is read. Older formats and password-protected files are rejected with an explanation.
+
+### 7. CSV import limits
+
+- UTF-16 is detected only when the file has a byte order mark. Files that are not valid UTF-8 are read as Windows-1252 with a warning.
+- The delimiter is detected by Papa Parse and is not user-selectable.
+
+### 8. Table display
+
+- Numbers appear as stored, without Excel number formatting (for example 30010.5 and not 30,010.50).
+- Long cell text is cut at 200 characters on screen. The full text (up to 1,000 characters) is in the tooltip. The data itself is not changed.
+
+### 9. Dependency licenses not yet audited
 
 - The `cn` package is newer and less established than `clsx` and `tailwind-merge`.
-- Licenses were recorded from general knowledge and package metadata only.
+- Licenses of other packages were recorded from package metadata or general knowledge only.
 - Action: full license audit in Phase 9.
 
-### 3. No browser Back button or bookmarks between pages
+### 10. No browser Back button or bookmarks between pages
 
-- Navigation uses React state, not a router. Refreshing the browser returns to the Dashboard.
-- Accepted for the local MVP. Revisit before commercialization.
+- Navigation uses React state, not a router. Refreshing the browser discards the loaded spreadsheet and returns to the Dashboard.
 
-### 4. Favicon is a placeholder
+### 11. Favicon is a placeholder
 
-- A simple checkmark drawn for the project. Replace with a real logo before any public release.
+- A simple checkmark drawn for the project. Replace it before any public release.
 
-### 5. Responsive layout tested on a resized desktop window only
+### 12. Responsive layout tested on a resized desktop window only
 
 - Real tablet and phone testing is still to do (Phase 8).
+
+### 13. Tests use a stand-in for the Web Worker
+
+- The engine, handler and client are tested without a browser. The real worker is only exercised by hand.
+- Action: include the worker in the manual checks in Phase 8.
 
 ## Resolved
 

@@ -73,3 +73,52 @@ Status: complete (no spreadsheet processing yet, by design).
 
 - Dependency licenses, spreadsheet library choice, network behaviour: unchanged from Phase 1.
 - Dashboard and workspace layouts on real phones and tablets (only a resized desktop window was used).
+
+
+## Phase 3: Spreadsheet import (2026-11-14 to 2026-11-17)
+
+Status: complete. Informal timing and memory measurements are NOT recorded yet; they are scheduled for Phase 8.
+
+### What was built
+
+- **Data model** (`src/engine/types.ts`): stable column ids separate from names, rows as arrays aligned with the columns, `null` for empty cells, a `DateCell` type that keeps the raw Excel serial number plus Excel's displayed text, and a source row number on every row.
+- **CSV importer** (`src/engine/io/csv.ts`): Papa Parse with every value kept as text. Encoding detection (UTF-8 with or without BOM, UTF-16 with BOM, otherwise Windows-1252 with a warning). Blank headers, short rows, long rows, trailing empty rows and unclosed quotes are handled and reported.
+- **XLSX importer** (`src/engine/io/xlsx.ts`): reads one chosen worksheet. Finds the real data area instead of trusting the declared sheet size. Handles text, numbers, dates, booleans, formulas (last calculated value), Excel errors and merged cells, and reports each of these.
+- **File validation** (`src/engine/io/validation.ts`): empty file, size, extension, file signature (ZIP versus old or password-protected Excel), row and column limits. Messages are written for end users.
+- **Entry point** (`src/engine/io/importFile.ts`).
+- **Web Worker** (`src/workers/`): a message protocol, a handler that owns the loaded dataset, a worker entry point and a promise-based client with cancel. The interface receives a summary and one page of rows at a time.
+- **Interface**: working upload area, file summary card (name, size, format, rows, columns, notes about the import), worksheet selector, data table with a Row column, pagination at 100 rows per page.
+- **Test file generator** (`scripts/make-test-files.mjs`) writing into the git-ignored `private-data/` folder.
+
+### Decisions
+
+- **SheetJS Community Edition 0.20.3 from SheetJS's own server, vendored.** The npm copy of `xlsx` is frozen at 0.18.5, which has two known high-severity advisories (prototype pollution and ReDoS) fixed in 0.20.2. The tarball is kept at `vendor/xlsx-0.20.3.tgz` and installed with `file:`.
+  - License in the tarball's package.json: Apache-2.0. No runtime dependencies.
+  - Size 2,409,319 bytes. SHA256 `8DC73FC3B00203E72D176E85B50938627C7B086E607C682E8D3C22C02BB99FE8`. This detects later changes only. It does not prove authenticity, because no published checksum from SheetJS was found to compare against.
+  - Alternative to test another time: `read-excel-file` with `write-excel-file` (MIT, normal npm distribution, unknown behaviour for raw serial dates and formatted text).
+- **Papa Parse for CSV**, with number conversion off so IDs, zeros and `=` values stay text. MIT per package metadata checked at install time.
+- **Leading-zero numbers (Option 1):** an Excel number formatted with only zeros (such as `00000`) is imported as text (`00123`) and counted in the import notes. Other number formats stay plain numbers. This was confirmed by reply "d" and not by an explicit choice, so it can be changed.
+- **Dates:** an Excel cell is a date when its number format is a date or time format. Text that looks like a date is never converted, in either format.
+- **Limits (initial, unvalidated):** 10 MB, 50,000 data rows (header excluded), 100 columns. Shown on the upload area from the same constants the validation uses.
+- **The dataset never leaves the worker.** The interface gets a summary and pages of at most 500 rows (the interface asks for 100).
+- **A failed import keeps the previous spreadsheet.** Cancelling stops the worker, which discards the loaded data too.
+- **No percentage progress for imports.** Parsing is one synchronous call, so a busy indicator is shown and no percentage is invented.
+- **Unexpected errors show a generic message and are not logged,** because an error message could contain spreadsheet content.
+- **Numbers in the table appear as stored,** without Excel's number formatting. Dates and zero-padded IDs carry their displayed text.
+- **No router library.** Unchanged from Phase 2.
+
+### Verified
+
+- `npx tsc -b`, `npm run lint`, `npm test` and `npm run build` pass (as reported by the developer at each step).
+- `npm audit --omit=dev` reported 0 vulnerabilities before SheetJS and Papa Parse were added. Re-run before release (see KNOWN_ISSUES.md).
+- Library behaviour that the engine depends on is pinned by tests in `src/engine/io/xlsx-library.test.ts`.
+- The upload, rejection messages, worksheet switching, data table and pagination were tried by hand in the browser with the generated test files.
+
+### Not yet done or verified
+
+- Time and memory for large files (25,000 and 50,000 rows). Not measured.
+- Network behaviour (that no spreadsheet data leaves the device). Phase 8.
+- Dependency license audit. Phase 9.
+- Tests use a stand-in for the Web Worker. The real worker has only been exercised by hand.
+- Behaviour with hidden worksheets, hidden rows and filtered rows in XLSX files. Not tested.
+- Option B library comparison. Deferred by the developer.
