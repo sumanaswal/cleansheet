@@ -24,7 +24,7 @@ export function CleanSpreadsheetPage({ session }: CleanSpreadsheetPageProps) {
                     <OperationsPanel notice={notice} />
                 </div>
                 <div className="order-1 lg:order-2">
-                    <PreviewPanel summary={session.summary} />
+                    <PreviewPanel session={session} />
                 </div>
                 <div className="order-3">
                     <SettingsPanel />
