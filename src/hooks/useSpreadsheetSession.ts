@@ -7,8 +7,14 @@ import {
     ImportCancelledError,
     type ImportClient,
     type PageResult,
+    type PreviewPage,
 } from '@/workers/importClient'
-import type { DatasetSummary } from '@/workers/protocol'
+import type {
+    AppliedResult,
+    DatasetSummary,
+    OperationPreviewSummary,
+    OperationSpec,
+} from '@/workers/protocol'
 
 export type SessionStatus = 'empty' | 'loading' | 'ready'
 
@@ -27,6 +33,14 @@ export interface SpreadsheetSession {
     getPage(offset: number, limit: number): Promise<PageResult>
     /** The data quality profile of the loaded spreadsheet. */
     getProfile(): Promise<DatasetProfile>
+    /** Works out what an operation would do, without changing anything. */
+    previewOperation(operation: OperationSpec): Promise<OperationPreviewSummary>
+    /** A page of the records that the previewed operation would affect. */
+    getPreviewPage(offset: number, limit: number): Promise<PreviewPage>
+    /** Discards the preview. */
+    clearPreview(): Promise<void>
+    /** Applies an operation and updates the summary to match the new data. */
+    applyOperation(operation: OperationSpec): Promise<AppliedResult>
 }
 
 const UNREADABLE_FILE =
@@ -125,6 +139,31 @@ export function useSpreadsheetSession(client: ImportClient): SpreadsheetSession 
 
     const getProfile = useCallback(() => client.getProfile(), [client])
 
+    const previewOperation = useCallback(
+        (operation: OperationSpec) => client.previewOperation(operation),
+        [client],
+    )
+
+    const getPreviewPage = useCallback(
+        (offset: number, limit: number) => client.getPreviewPage(offset, limit),
+        [client],
+    )
+
+    const clearPreview = useCallback(() => client.clearPreview(), [client])
+
+    const applyOperation = useCallback(
+        async (operation: OperationSpec): Promise<AppliedResult> => {
+            const attempt = attemptRef.current
+            const result = await client.applyOperation(operation)
+            // The summary is a new object, so the table and the Data Quality page
+            // load the new data. Skipped if another file was opened or the data was
+            // removed in the meantime.
+            if (attemptRef.current === attempt) setSummary(result.summary)
+            return result
+        },
+        [client],
+    )
+
     const status: SessionStatus = loading
         ? 'loading'
         : summary === null
@@ -140,5 +179,9 @@ export function useSpreadsheetSession(client: ImportClient): SpreadsheetSession 
         reset,
         getPage,
         getProfile,
+        previewOperation,
+        getPreviewPage,
+        clearPreview,
+        applyOperation,
     }
 }

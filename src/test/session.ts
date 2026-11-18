@@ -85,6 +85,22 @@ export function makeSession(
         reset: vi.fn(),
         getPage: vi.fn().mockResolvedValue({ offset: 0, rows: [], rowCount: 0 }),
         getProfile: vi.fn().mockResolvedValue(makeProfile()),
+        previewOperation: vi.fn().mockResolvedValue({
+            totalRows: 0,
+            removedRows: 0,
+            retainedRows: 0,
+            skippedRows: 0,
+            itemCount: 0,
+        }),
+        getPreviewPage: vi
+            .fn()
+            .mockResolvedValue({ offset: 0, items: [], itemCount: 0 }),
+        clearPreview: vi.fn().mockResolvedValue(undefined),
+        applyOperation: vi.fn().mockResolvedValue({
+            summary: makeSummary(),
+            removedRows: 0,
+            historyDepth: 0,
+        }),
         ...overrides,
     }
 }

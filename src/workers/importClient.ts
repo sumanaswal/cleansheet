@@ -1,8 +1,14 @@
 import { ImportError } from '@/engine/io/types'
+import { OperationError } from '@/engine/operations/types'
 import type { DatasetProfile } from '@/engine/profiling/types'
 import type { Row } from '@/engine/types'
 import type {
+    AppliedResult,
     DatasetSummary,
+    OperationPreviewSummary,
+    OperationSpec,
+    PreviewItem,
+    RowMark,
     WorkerRequest,
     WorkerResponse,
 } from '@/workers/protocol'
@@ -26,6 +32,14 @@ export interface PageResult {
     readonly offset: number
     readonly rows: readonly Row[]
     readonly rowCount: number
+    /** Present only while an operation is being previewed. One entry per row. */
+    readonly marks?: readonly (RowMark | null)[]
+}
+
+export interface PreviewPage {
+    readonly offset: number
+    readonly items: readonly PreviewItem[]
+    readonly itemCount: number
 }
 
 export interface ImportClient {
@@ -45,6 +59,21 @@ export interface ImportClient {
      * computes it the first time and remembers it until the data changes.
      */
     getProfile(): Promise<DatasetProfile>
+    /**
+     * Works out what an operation would do, without changing anything, and
+     * keeps the result so its records can be listed and highlighted.
+     * Rejects with an OperationError when the settings cannot be used.
+     */
+    previewOperation(operation: OperationSpec): Promise<OperationPreviewSummary>
+    /** Returns a page of the records the previewed operation would affect. */
+    getPreviewPage(offset: number, limit: number): Promise<PreviewPage>
+    /** Discards the preview. */
+    clearPreview(): Promise<void>
+    /**
+     * Applies an operation. The worker recalculates it from the settings and
+     * keeps the previous version of the data.
+     */
+    applyOperation(operation: OperationSpec): Promise<AppliedResult>
     /** Discards the loaded spreadsheet. */
     clear(): Promise<void>
     /**
@@ -68,6 +97,17 @@ interface Pending {
 const CRASH_MESSAGE =
     'The background processor stopped unexpectedly. Please try again.'
 const UNEXPECTED_REPLY = 'Unexpected reply from the background processor.'
+
+function toError(response: Extract<WorkerResponse, { type: 'error' }>): Error {
+    switch (response.kind) {
+        case 'import':
+            return new ImportError(response.message)
+        case 'operation':
+            return new OperationError(response.message)
+        case 'internal':
+            return new Error(response.message)
+    }
+}
 
 export function createImportClient(createWorker: () => WorkerLike): ImportClient {
     let worker: WorkerLike | null = null
@@ -97,11 +137,7 @@ export function createImportClient(createWorker: () => WorkerLike): ImportClient
             if (entry === undefined) return
             pending.delete(response.id)
             if (response.type === 'error') {
-                entry.reject(
-                    response.kind === 'import'
-                        ? new ImportError(response.message)
-                        : new Error(response.message),
-                )
+                entry.reject(toError(response))
             } else {
                 entry.resolve(response)
             }
@@ -144,12 +180,36 @@ export function createImportClient(createWorker: () => WorkerLike): ImportClient
                 offset: response.offset,
                 rows: response.rows,
                 rowCount: response.rowCount,
+                marks: response.marks,
             }
         },
         async getProfile() {
             const response = await send({ type: 'getProfile' }, [])
             if (response.type !== 'profile') throw new Error(UNEXPECTED_REPLY)
             return response.profile
+        },
+        async previewOperation(operation) {
+            const response = await send({ type: 'previewOperation', operation }, [])
+            if (response.type !== 'previewed') throw new Error(UNEXPECTED_REPLY)
+            return response.summary
+        },
+        async getPreviewPage(offset, limit) {
+            const response = await send({ type: 'getPreviewPage', offset, limit }, [])
+            if (response.type !== 'previewPage') throw new Error(UNEXPECTED_REPLY)
+            return {
+                offset: response.offset,
+                items: response.items,
+                itemCount: response.itemCount,
+            }
+        },
+        async clearPreview() {
+            const response = await send({ type: 'clearPreview' }, [])
+            if (response.type !== 'previewCleared') throw new Error(UNEXPECTED_REPLY)
+        },
+        async applyOperation(operation) {
+            const response = await send({ type: 'applyOperation', operation }, [])
+            if (response.type !== 'applied') throw new Error(UNEXPECTED_REPLY)
+            return response.result
         },
         async clear() {
             const response = await send({ type: 'clear' }, [])
