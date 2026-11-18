@@ -1,3 +1,4 @@
+import { encodeRow } from '@/engine/cellKey'
 import {
     classifyValue,
     detectColumnType,
@@ -11,7 +12,7 @@ import type {
     ColumnType,
     DatasetProfile,
 } from '@/engine/profiling/types'
-import type { CellValue, Dataset } from '@/engine/types'
+import type { Dataset } from '@/engine/types'
 
 interface Tally {
     kinds: KindCounts
@@ -28,27 +29,6 @@ const PROBLEM_TYPES: ReadonlySet<ColumnType> = new Set<ColumnType>([
 ])
 
 /**
- * Encodes one cell so that cells match only when they are exactly equal:
- * the text "1" differs from the number 1, and case and spaces matter.
- * Text is length-prefixed, so separators inside values cannot cause clashes.
- */
-function encodeCell(cell: CellValue): string {
-    if (cell === null) return 'n'
-    if (typeof cell === 'string') return `s${cell.length}:${cell}`
-    if (typeof cell === 'number') return `d${cell};`
-    if (typeof cell === 'boolean') return cell ? 'b1' : 'b0'
-    return `t${cell.serial}:${cell.text.length}:${cell.text}`
-}
-
-function rowKey(cells: readonly CellValue[], width: number): string {
-    const parts: string[] = []
-    for (let i = 0; i < width; i += 1) {
-        parts.push(encodeCell(cells[i] ?? null))
-    }
-    return parts.join('|')
-}
-
-/**
  * Analyses a dataset without changing it. Missing cells are empty cells and
  * cells with only whitespace. Duplicate rows are rows identical to an earlier
  * row in every column (exact match); fully empty rows are counted as empty
@@ -58,6 +38,7 @@ function rowKey(cells: readonly CellValue[], width: number): string {
 export function profileDataset(dataset: Dataset): DatasetProfile {
     const { columns, rows } = dataset
     const width = columns.length
+    const allColumns = columns.map((_, index) => index)
     const tallies: Tally[] = columns.map(() => ({
         kinds: emptyKindCounts(),
         missing: 0,
@@ -98,7 +79,7 @@ export function profileDataset(dataset: Dataset): DatasetProfile {
             emptyRows += 1
             continue
         }
-        const key = rowKey(row.cells, width)
+        const key = encodeRow(row.cells, allColumns)
         if (seen.has(key)) {
             duplicateRows += 1
         } else {
