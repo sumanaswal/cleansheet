@@ -122,3 +122,46 @@ Status: complete. Informal timing and memory measurements are NOT recorded yet; 
 - Tests use a stand-in for the Web Worker. The real worker has only been exercised by hand.
 - Behaviour with hidden worksheets, hidden rows and filtered rows in XLSX files. Not tested.
 - Option B library comparison. Deferred by the developer.
+
+
+## Phase 4: Data profiling (2026-11-17 to 2026-11-18)
+
+Status: complete. Timing and memory for large files are NOT measured yet (Phase 8).
+
+### What was built
+
+- **Profiling engine** (`src/engine/profiling/`): `profileDataset()` makes one pass over a dataset and returns the totals plus one profile per column. It only reads the data and never changes it (checked by a test).
+  - `missing.ts`: what counts as missing, and the list of possible placeholders.
+  - `columnType.ts`: classifies each value, then decides each column's type.
+  - `negative.ts`: what counts as a negative number.
+  - `profile.ts`: the single pass.
+- **Worker support:** new `getProfile` request and `profile` reply. The worker computes the profile the first time it is asked for, keeps it, and forgets it when a different file loads or the data is cleared.
+- **Data Quality page:** seven summary figures (total rows, total columns, duplicate rows, missing cells, empty rows, empty columns, negative numbers), a column table (position, name, detected type, missing, possible placeholders, exceptions, negative, status) and a short "How these are counted" section. "Analyzing…" is shown while the worker computes.
+- **Hooks:** `useDatasetProfile` never shows the profile of a previous file and ignores replies that arrive late.
+
+### Definitions (decided by the developer)
+
+1. **Missing cell:** an empty cell or one holding only whitespace. Zero, false and text such as N/A are not missing. Possible placeholders (n/a, na, #n/a, null, nil, none, nan, a lone - and --, ignoring case) are listed per column and not counted as missing.
+2. **Duplicate row:** identical to an earlier row in every column. Exact match: case, spaces and number-versus-text all matter. Fully empty rows count as empty rows and never as duplicates.
+3. **Empty row or column:** every cell (for a column, every data cell, ignoring the header) is missing. A header-only file therefore reports every column as empty.
+4. **Column types:** Text, Number, Date (an Excel date cell), Boolean, Mixed, Empty, plus Number stored as text, Date stored as text and ID-like text (leading zeros). A column gets a type when at least 90% of its values fit; the rest are counted as exceptions; otherwise it is Mixed. Dates stored as text are flagged and never interpreted.
+5. **Page contents:** the figures and the column table. Showing the actual rows is left for Phase 5.
+
+Decisions made beyond those five:
+- Placeholders are left out of type detection and reported separately. A column holding only placeholders is Text, not Empty.
+- One value with leading zeros is enough to label a column ID-like, because converting it to numbers would lose the zeros.
+- Text counts as date-like only if its shape is a plausible date (13/13/2026 and 2026-04-32 do not). Nothing is interpreted.
+- The 90% test uses whole-number arithmetic.
+- A column is marked "Worth checking" when it has missing cells, placeholders or exceptions, or is Mixed, Empty, Number stored as text or Date stored as text. ID-like text alone is not marked.
+- The profile is computed when the Data Quality page first needs it, and not right after import. The worker remembers it.
+- **Negative numbers (added at the developer's request):** number cells below zero, and text that is clearly a negative number (-12, -1,250.50). Shown as a seventh figure and a column, as information only. They never mark a column as worth checking, because negatives are often correct. Zero, a lone dash and amounts in brackets such as (500) are not counted. The developer asked for a tab; a figure and a column were chosen instead, to avoid building a "show these rows" view that Phase 5 needs anyway. The developer accepted this.
+
+### Verified
+
+- `npx tsc -b`, `npm run lint`, `npm test` and `npm run build` pass.
+- The figures for `csv-100.csv` and `mixed-types.xlsx` were checked by hand against values worked out from the generator and matched, as reported by the developer.
+
+### Not yet done or verified
+
+- Time to analyze 25,000 and 50,000-row files, and memory use during duplicate detection (see KNOWN_ISSUES.md).
+- Behaviour on real-world files with unusual number and date text formats.

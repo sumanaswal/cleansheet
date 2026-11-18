@@ -2,7 +2,7 @@
 
 A browser-based spreadsheet cleaning tool for office employees who work with Excel and CSV files. It is designed to run entirely on your own computer, with no account and no server.
 
-**Status:** under development. You can open an XLSX or CSV file, see a summary of it and browse its data. Cleaning, quality analysis and export are being built phase by phase. See `DEVELOPMENT_LOG.md` for what is done.
+**Status:** under development. You can open an XLSX or CSV file, see a summary of it, browse its data and see a data quality overview. Cleaning and export are being built phase by phase. See `DEVELOPMENT_LOG.md` for what is done.
 
 ## Requirements
 

@@ -72,6 +72,28 @@
 - The engine, handler and client are tested without a browser. The real worker is only exercised by hand.
 - Action: include the worker in the manual checks in Phase 8.
 
+### 14. Profiling cost on large files is unmeasured
+
+- Duplicate detection builds one text key per row and keeps them all in memory. For 50,000 rows by 100 columns that may be large.
+- The profile runs on the worker's single thread. While it runs, requests for pages of rows wait behind it. The Data Quality page shows "Analyzing…" meanwhile.
+- Action: measure time and memory with the generated 25,000 and 50,000-row files in Phase 8. If needed, switch to hashing the row keys or analyze in chunks.
+
+### 15. Profile rules are fixed and some formats are not recognised
+
+- The placeholder list is fixed: n/a, na, #n/a, null, nil, none, nan, - and --. Words like "NA" or "None" can be real data, which is why they are only reported and never counted as missing.
+- Numbers stored as text are recognised with commas as thousands separators and a dot as the decimal point. Other styles (for example 1.234,50), percentages (5%), currency symbols (-$5) and a typographic minus sign are treated as plain text. Negative numbers written in those styles are not counted.
+- Dates stored as text are recognised only by their shape (day or month first, year first, or with a month name). Nothing is interpreted, so 03/04/2026 is flagged as a date without deciding which part is the month.
+- The 90% rule for column types is a chosen value and has not been tested on real files.
+
+### 16. The profile does not refresh after cleaning
+
+- The worker keeps the profile until another file is imported or the data is cleared. Cleaning operations (Phase 5) will change the data, so they must clear the stored profile, and the Data Quality page must ask again.
+- Action: build this into the first cleaning operation, with a test.
+
+### 17. The Data Quality page shows counts but not the rows behind them
+
+- It says how many duplicates, missing cells and negative numbers there are, but not where. The "show me these rows" view arrives with the Phase 5 previews.
+
 ## Resolved
 
 - ESLint `react-refresh/only-export-components` error in the shadcn `button.tsx`: resolved with a folder-scoped rule exception.
