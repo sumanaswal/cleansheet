@@ -32,6 +32,7 @@ export function makeProfile(
         missingCells: 30,
         emptyRows: 4,
         emptyColumns: 1,
+        negativeNumbers: 7,
         columns: [
             {
                 id: 'c1',
@@ -41,6 +42,7 @@ export function makeProfile(
                 missingCount: 10,
                 placeholderCount: 2,
                 exceptionCount: 0,
+                negativeCount: 0,
                 hasIssues: true,
             },
             {
@@ -51,6 +53,7 @@ export function makeProfile(
                 missingCount: 0,
                 placeholderCount: 0,
                 exceptionCount: 4,
+                negativeCount: 0,
                 hasIssues: true,
             },
             {
@@ -61,6 +64,7 @@ export function makeProfile(
                 missingCount: 0,
                 placeholderCount: 0,
                 exceptionCount: 0,
+                negativeCount: 7,
                 hasIssues: false,
             },
         ],

@@ -28,6 +28,7 @@ const FIGURES: readonly Figure[] = [
     { label: 'Missing cells', value: (p) => p.missingCells },
     { label: 'Empty rows', value: (p) => p.emptyRows },
     { label: 'Empty columns', value: (p) => p.emptyColumns },
+    { label: 'Negative numbers', value: (p) => p.negativeNumbers },
 ]
 
 const DEFINITIONS: readonly string[] = [
@@ -35,6 +36,7 @@ const DEFINITIONS: readonly string[] = [
     'Duplicate rows are rows identical to an earlier row in every column. The match is exact: capital letters, spaces and number-versus-text all matter. Completely empty rows are counted as empty rows, not as duplicates.',
     'Possible placeholders, such as N/A, NULL and a lone dash, are listed for each column but are not counted as missing.',
     'A column is given a type when at least 90% of its values fit it. The other values are shown as exceptions. Dates stored as text are flagged, never interpreted.',
+    'Negative numbers are number cells below zero, and text that is clearly a negative number, such as -12 or -1,250.50. They are shown for information only and do not mark a column as worth checking, because negative numbers are often correct (refunds, balances, temperatures). Zero, a lone dash and amounts in brackets such as (500) are not counted.',
 ]
 
 function format(value: number): string {
@@ -152,6 +154,9 @@ export function DataQualityPage({ session }: DataQualityPageProps) {
                                     <th scope="col" className="px-3 py-2 text-right font-medium">
                                         Exceptions
                                     </th>
+                                    <th scope="col" className="px-3 py-2 text-right font-medium">
+                                        Negative
+                                    </th>
                                     <th scope="col" className="px-3 py-2 font-medium">
                                         Status
                                     </th>
@@ -180,6 +185,9 @@ export function DataQualityPage({ session }: DataQualityPageProps) {
                                         </td>
                                         <td className="px-3 py-2 text-right tabular-nums">
                                             {format(column.exceptionCount)}
+                                        </td>
+                                        <td className="px-3 py-2 text-right tabular-nums">
+                                            {format(column.negativeCount)}
                                         </td>
                                         <td className="px-3 py-2">
                                             {column.hasIssues ? (

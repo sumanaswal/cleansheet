@@ -26,7 +26,9 @@ export interface ColumnProfile {
     readonly placeholderCount: number
     /** Values that do not fit the detected type. 0 for Mixed and Empty columns. */
     readonly exceptionCount: number
-    /** True when the column has something worth checking. */
+    /** Number cells below zero, and text that is clearly a negative number. Informational only. */
+    readonly negativeCount: number
+    /** True when the column has something worth checking. Negative numbers do not count. */
     readonly hasIssues: boolean
 }
 
@@ -41,5 +43,7 @@ export interface DatasetProfile {
     readonly emptyRows: number
     /** Columns in which every data cell is missing. */
     readonly emptyColumns: number
+    /** Negative numbers in the whole dataset. Informational only. */
+    readonly negativeNumbers: number
     readonly columns: readonly ColumnProfile[]
 }

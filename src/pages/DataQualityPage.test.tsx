@@ -27,7 +27,7 @@ describe('DataQualityPage: nothing loaded', () => {
         expect(screen.getByText('No spreadsheet loaded')).toBeInTheDocument()
     })
 
-    it('lists the six summary figures with no values and does not analyze', () => {
+    it('lists the seven summary figures with no values and does not analyze', () => {
         const session = makeSession()
         render(<DataQualityPage session={session} />)
         for (const label of [
@@ -37,6 +37,7 @@ describe('DataQualityPage: nothing loaded', () => {
             'Missing cells',
             'Empty rows',
             'Empty columns',
+            'Negative numbers',
         ]) {
             expect(figure(label)).toHaveTextContent('—')
         }
@@ -49,24 +50,27 @@ describe('DataQualityPage: nothing loaded', () => {
             screen.getByRole('heading', { name: 'How these are counted' }),
         ).toBeInTheDocument()
         expect(screen.getByText(/at least 90% of its values fit it/)).toBeInTheDocument()
+        expect(
+            screen.getByText(/do not mark a column as worth checking/),
+        ).toBeInTheDocument()
     })
 })
 
 describe('DataQualityPage: spreadsheet loaded', () => {
     it('says the spreadsheet is being analyzed while it waits', () => {
-        renderLoaded(vi.fn().mockReturnValue(new Promise(() => { })))
+        renderLoaded(() => new Promise<DatasetProfile>(() => { }))
         expect(screen.getByRole('status')).toHaveTextContent('Analyzing staff.csv')
         expect(figure('Total rows')).toHaveTextContent('—')
     })
 
     it('shows an error when the analysis fails', async () => {
-        renderLoaded(vi.fn().mockRejectedValue(new Error('No spreadsheet is loaded.')))
+        renderLoaded(() => Promise.reject(new Error('No spreadsheet is loaded.')))
         const alert = await screen.findByRole('alert')
         expect(alert).toHaveTextContent('No spreadsheet is loaded.')
         expect(alert).toHaveTextContent('remove the file and upload it again')
     })
 
-    it('shows the six figures once the analysis is done', async () => {
+    it('shows the seven figures once the analysis is done', async () => {
         renderLoaded(vi.fn().mockResolvedValue(makeProfile()))
         await screen.findByRole('table', { name: 'Column quality' })
         expect(figure('Total rows')).toHaveTextContent('1,234')
@@ -75,6 +79,7 @@ describe('DataQualityPage: spreadsheet loaded', () => {
         expect(figure('Missing cells')).toHaveTextContent('30')
         expect(figure('Empty rows')).toHaveTextContent('4')
         expect(figure('Empty columns')).toHaveTextContent('1')
+        expect(figure('Negative numbers')).toHaveTextContent('7')
     })
 
     it('shows one row per column, with the detected type and a marker for columns worth checking', async () => {
@@ -90,6 +95,19 @@ describe('DataQualityPage: spreadsheet loaded', () => {
         expect(within(table).getByText('Number stored as text')).toBeInTheDocument()
         expect(within(table).getByText('Number')).toBeInTheDocument()
         expect(within(table).getAllByText('Worth checking')).toHaveLength(2)
+    })
+
+    it('shows the count of negative numbers for each column without marking it', async () => {
+        renderLoaded(vi.fn().mockResolvedValue(makeProfile()))
+        const table = await screen.findByRole('table', { name: 'Column quality' })
+        expect(
+            within(table).getByRole('columnheader', { name: 'Negative' }),
+        ).toBeInTheDocument()
+        const row = within(table).getByRole('row', { name: /Qty/ })
+        const cells = within(row).getAllByRole('cell')
+        // Cells: #, type, missing, placeholders, exceptions, negative, status.
+        expect(cells[5]).toHaveTextContent('7')
+        expect(within(row).queryByText('Worth checking')).toBeNull()
     })
 
     it('explains that a spreadsheet with no data rows counts every column as empty', async () => {

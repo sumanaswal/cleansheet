@@ -5,6 +5,7 @@ import {
     type KindCounts,
 } from '@/engine/profiling/columnType'
 import { isMissing, isPossiblePlaceholder } from '@/engine/profiling/missing'
+import { isNegativeNumber } from '@/engine/profiling/negative'
 import type {
     ColumnProfile,
     ColumnType,
@@ -16,6 +17,7 @@ interface Tally {
     kinds: KindCounts
     missing: number
     placeholders: number
+    negatives: number
 }
 
 const PROBLEM_TYPES: ReadonlySet<ColumnType> = new Set<ColumnType>([
@@ -50,7 +52,8 @@ function rowKey(cells: readonly CellValue[], width: number): string {
  * Analyses a dataset without changing it. Missing cells are empty cells and
  * cells with only whitespace. Duplicate rows are rows identical to an earlier
  * row in every column (exact match); fully empty rows are counted as empty
- * rows and never as duplicates.
+ * rows and never as duplicates. Negative numbers are counted for information
+ * and never mark a column as worth checking.
  */
 export function profileDataset(dataset: Dataset): DatasetProfile {
     const { columns, rows } = dataset
@@ -59,11 +62,13 @@ export function profileDataset(dataset: Dataset): DatasetProfile {
         kinds: emptyKindCounts(),
         missing: 0,
         placeholders: 0,
+        negatives: 0,
     }))
 
     let missingCells = 0
     let emptyRows = 0
     let duplicateRows = 0
+    let negativeNumbers = 0
     const seen = new Set<string>()
 
     for (const row of rows) {
@@ -81,6 +86,10 @@ export function profileDataset(dataset: Dataset): DatasetProfile {
             if (isPossiblePlaceholder(cell)) {
                 tally.placeholders += 1
                 continue
+            }
+            if (isNegativeNumber(cell)) {
+                tally.negatives += 1
+                negativeNumbers += 1
             }
             tally.kinds[classifyValue(cell)] += 1
         }
@@ -116,6 +125,7 @@ export function profileDataset(dataset: Dataset): DatasetProfile {
             missingCount: tally.missing,
             placeholderCount: tally.placeholders,
             exceptionCount,
+            negativeCount: tally.negatives,
             hasIssues:
                 tally.missing > 0 ||
                 tally.placeholders > 0 ||
@@ -131,6 +141,7 @@ export function profileDataset(dataset: Dataset): DatasetProfile {
         missingCells,
         emptyRows,
         emptyColumns,
+        negativeNumbers,
         columns: columnProfiles,
     }
 }

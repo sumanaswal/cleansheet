@@ -244,3 +244,49 @@ describe('profileDataset: edge cases', () => {
         expect(profile.columns.map((c) => c.name)).toEqual(['Name', 'Name'])
     })
 })
+
+describe('profileDataset: negative numbers', () => {
+    it('counts negative numbers and negative text per column and in total', () => {
+        const profile = profileDataset(
+            dataset(
+                ['Amount', 'Name'],
+                [
+                    [-5, 'a'],
+                    ['-1,250.50', 'b'],
+                    [3, 'c'],
+                    [0, 'd'],
+                    ['-0', 'e'],
+                    ['-', 'f'],
+                    ['(500)', 'g'],
+                    [-0.5, 'h'],
+                ],
+            ),
+        )
+        expect(profile.negativeNumbers).toBe(3)
+        expect(column(profile, 0).negativeCount).toBe(3)
+        expect(column(profile, 1).negativeCount).toBe(0)
+    })
+
+    it('never counts date cells, booleans or empty cells', () => {
+        const profile = profileDataset(
+            dataset(
+                ['v'],
+                [[{ kind: 'date', serial: -5, text: '-5' }], [false], [null], [' ']],
+            ),
+        )
+        expect(profile.negativeNumbers).toBe(0)
+        expect(column(profile, 0).negativeCount).toBe(0)
+    })
+
+    it('does not make a column worth checking', () => {
+        const profile = profileDataset(dataset(['Qty'], [[-1], [2], [3]]))
+        expect(column(profile, 0)).toMatchObject({
+            type: 'number',
+            negativeCount: 1,
+            missingCount: 0,
+            placeholderCount: 0,
+            exceptionCount: 0,
+            hasIssues: false,
+        })
+    })
+})
