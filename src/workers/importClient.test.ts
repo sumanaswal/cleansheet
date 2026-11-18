@@ -101,3 +101,18 @@ describe('import client', () => {
         expect(worker.terminated).toBe(true)
     })
 })
+
+describe('import client: profile', () => {
+    it('returns the profile of the loaded spreadsheet', async () => {
+        const client = createImportClient(() => new HandlerWorker())
+        await client.importFile('data.csv', csv('a,b\n1,2\n1,2'))
+        const profile = await client.getProfile()
+        expect(profile.totalRows).toBe(2)
+        expect(profile.duplicateRows).toBe(1)
+    })
+
+    it('rejects when nothing is loaded', async () => {
+        const client = createImportClient(() => new HandlerWorker())
+        await expect(client.getProfile()).rejects.toThrow('No spreadsheet is loaded.')
+    })
+})

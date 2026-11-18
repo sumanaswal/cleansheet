@@ -27,7 +27,7 @@ function App() {
       case 'clean':
         return <CleanSpreadsheetPage session={session} />
       case 'quality':
-        return <DataQualityPage summary={session.summary} />
+        return <DataQualityPage session={session} />
       case 'help':
         return <HelpPage />
     }

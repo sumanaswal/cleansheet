@@ -173,3 +173,16 @@ describe('useSpreadsheetSession', () => {
         expect(page.rows.map((row) => row.cells)).toEqual([['2'], ['3']])
     })
 })
+
+describe('useSpreadsheetSession: profile', () => {
+    it('returns the profile of the loaded spreadsheet', async () => {
+        const result = setup()
+        const { file } = fakeFile('data.csv', csv('a,b\n1,2\n1,2'))
+        await act(async () => {
+            await result.current.loadFile(file)
+        })
+        const profile = await result.current.getProfile()
+        expect(profile.totalRows).toBe(2)
+        expect(profile.duplicateRows).toBe(1)
+    })
+})

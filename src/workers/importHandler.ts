@@ -1,5 +1,7 @@
 import { importFile, type ImportedFile } from '@/engine/io/importFile'
 import { ImportError } from '@/engine/io/types'
+import { profileDataset } from '@/engine/profiling/profile'
+import type { DatasetProfile } from '@/engine/profiling/types'
 import {
     MAX_PAGE_SIZE,
     type WorkerRequest,
@@ -21,6 +23,8 @@ function toWholeNumber(value: number, fallback: number): number {
  */
 export function createImportHandler(): (request: WorkerRequest) => WorkerResponse {
     let current: ImportedFile | null = null
+    // Computed the first time it is asked for, then kept until the data changes.
+    let profile: DatasetProfile | null = null
 
     return (request) => {
         try {
@@ -33,6 +37,7 @@ export function createImportHandler(): (request: WorkerRequest) => WorkerRespons
                     )
                     // Only replace the loaded spreadsheet once the new one succeeded.
                     current = imported
+                    profile = null
                     return {
                         id: request.id,
                         type: 'imported',
@@ -70,8 +75,23 @@ export function createImportHandler(): (request: WorkerRequest) => WorkerRespons
                         rowCount: rows.length,
                     }
                 }
+                case 'getProfile': {
+                    const loaded = current
+                    if (loaded === null) {
+                        return {
+                            id: request.id,
+                            type: 'error',
+                            kind: 'import',
+                            message: NO_DATASET,
+                        }
+                    }
+                    const computed = profile ?? profileDataset(loaded.dataset)
+                    profile = computed
+                    return { id: request.id, type: 'profile', profile: computed }
+                }
                 case 'clear':
                     current = null
+                    profile = null
                     return { id: request.id, type: 'cleared' }
             }
         } catch (error) {

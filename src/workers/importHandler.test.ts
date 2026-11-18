@@ -161,3 +161,51 @@ describe('import handler', () => {
         expectType(handle(pageRequest(0, 10)), 'error')
     })
 })
+
+function profileRequest(): WorkerRequest {
+    return { id: nextId(), type: 'getProfile' }
+}
+
+describe('import handler: profile', () => {
+    it('returns the profile of the loaded spreadsheet', () => {
+        const handle = createImportHandler()
+        handle(importRequest('data.csv', csv('a,b\n,\n1,x\n1,x')))
+        const { profile } = expectType(handle(profileRequest()), 'profile')
+        expect(profile.totalRows).toBe(3)
+        expect(profile.totalColumns).toBe(2)
+        expect(profile.duplicateRows).toBe(1)
+        expect(profile.emptyRows).toBe(1)
+        expect(profile.missingCells).toBe(2)
+    })
+
+    it('computes the profile once and reuses it', () => {
+        const handle = createImportHandler()
+        handle(importRequest('data.csv', numberedCsv(5)))
+        const first = expectType(handle(profileRequest()), 'profile')
+        const second = expectType(handle(profileRequest()), 'profile')
+        expect(second.profile).toBe(first.profile)
+    })
+
+    it('profiles the new spreadsheet after another one is imported', () => {
+        const handle = createImportHandler()
+        handle(importRequest('one.csv', numberedCsv(1)))
+        expect(expectType(handle(profileRequest()), 'profile').profile.totalRows).toBe(1)
+        handle(importRequest('three.csv', numberedCsv(3)))
+        expect(expectType(handle(profileRequest()), 'profile').profile.totalRows).toBe(3)
+    })
+
+    it('reports an error when no spreadsheet is loaded', () => {
+        const handle = createImportHandler()
+        const error = expectType(handle(profileRequest()), 'error')
+        expect(error.kind).toBe('import')
+        expect(error.message).toBe('No spreadsheet is loaded.')
+    })
+
+    it('forgets the profile when the data is cleared', () => {
+        const handle = createImportHandler()
+        handle(importRequest('data.csv', numberedCsv(3)))
+        expectType(handle(profileRequest()), 'profile')
+        handle({ id: nextId(), type: 'clear' })
+        expectType(handle(profileRequest()), 'error')
+    })
+})

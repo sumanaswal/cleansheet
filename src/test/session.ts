@@ -1,5 +1,6 @@
 import { vi } from 'vitest'
 
+import type { DatasetProfile } from '@/engine/profiling/types'
 import type { SpreadsheetSession } from '@/hooks/useSpreadsheetSession'
 import type { DatasetSummary } from '@/workers/protocol'
 
@@ -20,6 +21,53 @@ export function makeSummary(
     }
 }
 
+/** A profile with distinct figures, so tests can tell them apart. */
+export function makeProfile(
+    overrides: Partial<DatasetProfile> = {},
+): DatasetProfile {
+    return {
+        totalRows: 1234,
+        totalColumns: 3,
+        duplicateRows: 12,
+        missingCells: 30,
+        emptyRows: 4,
+        emptyColumns: 1,
+        columns: [
+            {
+                id: 'c1',
+                name: 'Name',
+                position: 1,
+                type: 'text',
+                missingCount: 10,
+                placeholderCount: 2,
+                exceptionCount: 0,
+                hasIssues: true,
+            },
+            {
+                id: 'c2',
+                name: 'Name',
+                position: 2,
+                type: 'numberText',
+                missingCount: 0,
+                placeholderCount: 0,
+                exceptionCount: 4,
+                hasIssues: true,
+            },
+            {
+                id: 'c3',
+                name: 'Qty',
+                position: 3,
+                type: 'number',
+                missingCount: 0,
+                placeholderCount: 0,
+                exceptionCount: 0,
+                hasIssues: false,
+            },
+        ],
+        ...overrides,
+    }
+}
+
 /** A session for page tests. Every action is a mock that does nothing. */
 export function makeSession(
     overrides: Partial<SpreadsheetSession> = {},
@@ -32,6 +80,7 @@ export function makeSession(
         selectSheet: vi.fn().mockResolvedValue(undefined),
         reset: vi.fn(),
         getPage: vi.fn().mockResolvedValue({ offset: 0, rows: [], rowCount: 0 }),
+        getProfile: vi.fn().mockResolvedValue(makeProfile()),
         ...overrides,
     }
 }

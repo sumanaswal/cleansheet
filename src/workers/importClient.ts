@@ -1,4 +1,5 @@
 import { ImportError } from '@/engine/io/types'
+import type { DatasetProfile } from '@/engine/profiling/types'
 import type { Row } from '@/engine/types'
 import type {
     DatasetSummary,
@@ -39,6 +40,11 @@ export interface ImportClient {
     ): Promise<DatasetSummary>
     /** Returns one page of rows of the loaded spreadsheet. */
     getPage(offset: number, limit: number): Promise<PageResult>
+    /**
+     * Returns the data quality profile of the loaded spreadsheet. The worker
+     * computes it the first time and remembers it until the data changes.
+     */
+    getProfile(): Promise<DatasetProfile>
     /** Discards the loaded spreadsheet. */
     clear(): Promise<void>
     /**
@@ -139,6 +145,11 @@ export function createImportClient(createWorker: () => WorkerLike): ImportClient
                 rows: response.rows,
                 rowCount: response.rowCount,
             }
+        },
+        async getProfile() {
+            const response = await send({ type: 'getProfile' }, [])
+            if (response.type !== 'profile') throw new Error(UNEXPECTED_REPLY)
+            return response.profile
         },
         async clear() {
             const response = await send({ type: 'clear' }, [])

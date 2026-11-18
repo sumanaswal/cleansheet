@@ -1,3 +1,4 @@
+import type { DatasetProfile } from '@/engine/profiling/types'
 import type { Column, Row, SourceFileInfo } from '@/engine/types'
 
 /** Largest page the worker will return in one reply. */
@@ -27,6 +28,7 @@ export type WorkerRequest =
         readonly offset: number
         readonly limit: number
     }
+    | { readonly id: number; readonly type: 'getProfile' }
     | { readonly id: number; readonly type: 'clear' }
 
 export type WorkerResponse =
@@ -41,6 +43,11 @@ export type WorkerResponse =
         readonly offset: number
         readonly rows: readonly Row[]
         readonly rowCount: number
+    }
+    | {
+        readonly id: number
+        readonly type: 'profile'
+        readonly profile: DatasetProfile
     }
     | { readonly id: number; readonly type: 'cleared' }
     | {

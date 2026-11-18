@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { ImportError } from '@/engine/io/types'
 import { validateFile } from '@/engine/io/validation'
+import type { DatasetProfile } from '@/engine/profiling/types'
 import {
     ImportCancelledError,
     type ImportClient,
@@ -24,6 +25,8 @@ export interface SpreadsheetSession {
     /** Stops any import in progress and discards the loaded spreadsheet. */
     reset(): void
     getPage(offset: number, limit: number): Promise<PageResult>
+    /** The data quality profile of the loaded spreadsheet. */
+    getProfile(): Promise<DatasetProfile>
 }
 
 const UNREADABLE_FILE =
@@ -120,11 +123,22 @@ export function useSpreadsheetSession(client: ImportClient): SpreadsheetSession 
         [client],
     )
 
+    const getProfile = useCallback(() => client.getProfile(), [client])
+
     const status: SessionStatus = loading
         ? 'loading'
         : summary === null
             ? 'empty'
             : 'ready'
 
-    return { status, summary, error, loadFile, selectSheet, reset, getPage }
+    return {
+        status,
+        summary,
+        error,
+        loadFile,
+        selectSheet,
+        reset,
+        getPage,
+        getProfile,
+    }
 }
