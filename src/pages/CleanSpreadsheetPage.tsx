@@ -1,3 +1,5 @@
+import { useState } from 'react'
+
 import { OperationsPanel } from '@/components/workspace/OperationsPanel'
 import { PreviewPanel } from '@/components/workspace/PreviewPanel'
 import { SettingsPanel } from '@/components/workspace/SettingsPanel'
@@ -8,10 +10,13 @@ interface CleanSpreadsheetPageProps {
 }
 
 export function CleanSpreadsheetPage({ session }: CleanSpreadsheetPageProps) {
-    const notice =
-        session.summary === null
-            ? 'Available after you upload a spreadsheet.'
-            : 'Cleaning operations are added in a later development phase.'
+    const [activeOperation, setActiveOperation] = useState<string | null>(null)
+    // Bumped whenever the preview of an operation changes, so the table
+    // reloads its rows together with up-to-date highlights.
+    const [previewRevision, setPreviewRevision] = useState(0)
+
+    const hasData = session.summary !== null
+    const active = hasData ? activeOperation : null
 
     return (
         <div className="mx-auto w-full max-w-[1600px] px-4 py-4">
@@ -21,13 +26,22 @@ export function CleanSpreadsheetPage({ session }: CleanSpreadsheetPageProps) {
 
             <div className="mt-4 grid gap-4 lg:grid-cols-[14rem_minmax(0,1fr)_18rem]">
                 <div className="order-2 lg:order-1">
-                    <OperationsPanel notice={notice} />
+                    <OperationsPanel
+                        hasData={hasData}
+                        activeId={active}
+                        onSelect={setActiveOperation}
+                    />
                 </div>
                 <div className="order-1 lg:order-2">
-                    <PreviewPanel session={session} />
+                    <PreviewPanel session={session} refreshKey={previewRevision} />
                 </div>
                 <div className="order-3">
-                    <SettingsPanel />
+                    <SettingsPanel
+                        session={session}
+                        activeOperation={active}
+                        onClose={() => setActiveOperation(null)}
+                        onPreviewChange={() => setPreviewRevision((value) => value + 1)}
+                    />
                 </div>
             </div>
         </div>

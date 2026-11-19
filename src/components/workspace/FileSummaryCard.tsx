@@ -66,7 +66,9 @@ export function FileSummaryCard({
                         ))}
                     </select>
                     <p className="mt-1 text-xs text-muted-foreground">
-                        CleanSheet cleans one worksheet at a time.
+                        CleanSheet cleans one worksheet at a time. Choosing another
+                        worksheet reloads the file and discards any cleaning you have
+                        applied to this one.
                     </p>
                 </div>
             )}

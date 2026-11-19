@@ -9,10 +9,17 @@ import type { DatasetSummary } from '@/workers/protocol'
 interface LoadedPreviewProps {
     summary: DatasetSummary
     getPage: SpreadsheetSession['getPage']
+    refreshKey: number
 }
 
-function LoadedPreview({ summary, getPage }: LoadedPreviewProps) {
-    const paged = usePagedRows(getPage, summary, summary.rowCount)
+function LoadedPreview({ summary, getPage, refreshKey }: LoadedPreviewProps) {
+    const paged = usePagedRows(
+        getPage,
+        summary,
+        summary.rowCount,
+        PAGE_SIZE,
+        refreshKey,
+    )
 
     return (
         <div className="mt-3 flex flex-col gap-3">
@@ -33,7 +40,17 @@ function LoadedPreview({ summary, getPage }: LoadedPreviewProps) {
                 </p>
             ) : (
                 <>
-                    <DataTable columns={summary.columns} rows={paged.rows} />
+                    <DataTable
+                        columns={summary.columns}
+                        rows={paged.rows}
+                        marks={paged.marks}
+                    />
+                    {paged.marks !== undefined && (
+                        <p className="text-xs text-foreground">
+                            Rows marked Remove would be removed. Rows marked Keep are the
+                            copies that stay. Nothing has been changed yet.
+                        </p>
+                    )}
                     {summary.rowCount === 0 && (
                         <p className="text-sm text-muted-foreground">
                             This spreadsheet has no data rows, only a header row.
@@ -52,8 +69,9 @@ function LoadedPreview({ summary, getPage }: LoadedPreviewProps) {
                         onPageChange={paged.goToPage}
                     />
                     <p className="text-xs text-muted-foreground">
-                        The Row column shows each row&apos;s number in your original file.
-                        Numbers appear as stored, without Excel&apos;s number formatting.
+                        The Row column shows each row&apos;s number in your original file,
+                        so rows that were removed leave gaps. Numbers appear as stored,
+                        without Excel&apos;s number formatting.
                     </p>
                 </>
             )}
@@ -63,9 +81,11 @@ function LoadedPreview({ summary, getPage }: LoadedPreviewProps) {
 
 interface PreviewPanelProps {
     session: SpreadsheetSession
+    /** Changes when the preview of an operation changes, so marks are reloaded. */
+    refreshKey: number
 }
 
-export function PreviewPanel({ session }: PreviewPanelProps) {
+export function PreviewPanel({ session, refreshKey }: PreviewPanelProps) {
     const { summary, getPage } = session
 
     return (
@@ -92,7 +112,11 @@ export function PreviewPanel({ session }: PreviewPanelProps) {
                     </p>
                 </div>
             ) : (
-                <LoadedPreview summary={summary} getPage={getPage} />
+                <LoadedPreview
+                    summary={summary}
+                    getPage={getPage}
+                    refreshKey={refreshKey}
+                />
             )}
         </section>
     )

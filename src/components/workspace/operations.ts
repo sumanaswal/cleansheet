@@ -1,4 +1,5 @@
 import {
+    ArrowLeftRight,
     CalendarDays,
     ClipboardCheck,
     Copy,
@@ -9,7 +10,6 @@ import {
     Scissors,
     Trash2,
     Type,
-    ArrowLeftRight,
     type LucideIcon,
 } from 'lucide-react'
 
@@ -53,3 +53,5 @@ export const OPERATION_GROUPS: readonly OperationGroup[] = [
     },
 ]
 
+/** Operations that are built. The others stay disabled until their module exists. */
+export const AVAILABLE_OPERATIONS: ReadonlySet<string> = new Set(['duplicates'])
