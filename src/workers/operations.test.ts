@@ -63,7 +63,12 @@ describe('buildPreview: duplicates', () => {
     it('names the later row as the one that stays when keeping the last', () => {
         const preview = buildPreview(letters, duplicates({ keep: 'last' }))
         expect(
-            preview.items(0, 10).map((item) => [item.row.sourceRow, item.keptSourceRow]),
+            preview
+                .items(0, 10)
+                .map((item) => [
+                    item.row.sourceRow,
+                    item.kind === 'removedRow' ? item.keptSourceRow : -1,
+                ]),
         ).toEqual([
             [2, 6],
             [4, 6],

@@ -99,6 +99,7 @@ export function makeSession(
         applyOperation: vi.fn().mockResolvedValue({
             summary: makeSummary(),
             removedRows: 0,
+            filledCells: 0,
             historyDepth: 0,
         }),
         ...overrides,

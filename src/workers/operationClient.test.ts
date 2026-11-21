@@ -57,7 +57,7 @@ describe('import client: operations', () => {
         const records = await client.getPreviewPage(0, 10)
         expect(records.itemCount).toBe(2)
         expect(records.items.map((item) => item.row.sourceRow)).toEqual([4, 6])
-        expect(records.items.map((item) => item.keptSourceRow)).toEqual([2, 2])
+        expect(records.items).toMatchObject([{ keptSourceRow: 2 }, { keptSourceRow: 2 }])
 
         await client.clearPreview()
         await expect(client.getPreviewPage(0, 10)).rejects.toBeInstanceOf(

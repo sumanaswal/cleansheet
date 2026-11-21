@@ -3,12 +3,15 @@ import { displayCell } from '@/components/workspace/cellDisplay'
 import { PREVIEW_PAGE_SIZE, usePreviewItems } from '@/hooks/usePreviewItems'
 import type { CellValue } from '@/engine/types'
 import type { PreviewPage } from '@/workers/importClient'
+import type { PreviewItem } from '@/workers/protocol'
 
 interface PreviewListProps {
     getPreviewPage: (offset: number, limit: number) => Promise<PreviewPage>
     /** Identifies the preview. When it changes, the list starts again at the first record. */
     version: object
     itemCount: number
+    /** What the records are. */
+    heading?: string
 }
 
 /** The first few values of a row, on one line. */
@@ -23,44 +26,79 @@ function summarizeRow(cells: readonly CellValue[]): string {
     return parts.length === 0 ? '(no values)' : parts.join(' | ')
 }
 
+function describeValue(value: CellValue): string {
+    const display = displayCell(value)
+    return display.kind === 'empty' ? '(empty)' : display.text
+}
+
+function describeItem(item: PreviewItem): { detail: string; summary: string } {
+    switch (item.kind) {
+        case 'removedRow':
+            return {
+                detail: ` · same as row ${item.keptSourceRow} (stays)`,
+                summary: summarizeRow(item.row.cells),
+            }
+        case 'filledCell':
+            return {
+                detail: ` · column ${item.columnPosition}: ${item.columnName}`,
+                summary: `${describeValue(item.oldValue)} → ${describeValue(item.newValue)}`,
+            }
+        case 'removedMissingRow':
+            return {
+                detail: ` · missing in: ${item.missingColumns.map((column) => column.name).join(', ')}`,
+                summary: summarizeRow(item.row.cells),
+            }
+    }
+}
+
+function itemKey(item: PreviewItem): string {
+    return item.kind === 'filledCell'
+        ? `${item.row.sourceRow}:${item.columnPosition}`
+        : `${item.row.sourceRow}`
+}
+
 function format(value: number): string {
     return value.toLocaleString('en-US')
 }
 
-export function PreviewList({ getPreviewPage, version, itemCount }: PreviewListProps) {
+export function PreviewList({
+    getPreviewPage,
+    version,
+    itemCount,
+    heading = 'Rows that will be removed',
+}: PreviewListProps) {
     const paged = usePreviewItems(getPreviewPage, version, itemCount)
     const first = paged.pageIndex * PREVIEW_PAGE_SIZE + 1
     const last = Math.min(itemCount, (paged.pageIndex + 1) * PREVIEW_PAGE_SIZE)
 
     return (
         <div>
-            <h5 className="text-xs font-medium text-foreground">
-                Rows that will be removed
-            </h5>
+            <h5 className="text-xs font-medium text-foreground">{heading}</h5>
             {paged.error !== null ? (
                 <p role="alert" className="mt-1 text-xs text-destructive">
                     {paged.error}
                 </p>
             ) : (
                 <ul className="mt-1 divide-y rounded-md border">
-                    {paged.items.map((item) => (
-                        <li key={item.row.sourceRow} className="px-2 py-1.5">
-                            <p className="text-xs">
-                                <span className="font-medium text-foreground">
-                                    {`Row ${item.row.sourceRow}`}
-                                </span>
-                                <span className="text-muted-foreground">
-                                    {` · same as row ${item.keptSourceRow} (stays)`}
-                                </span>
-                            </p>
-                            <p
-                                className="mt-0.5 truncate text-xs text-muted-foreground"
-                                title={summarizeRow(item.row.cells)}
-                            >
-                                {summarizeRow(item.row.cells)}
-                            </p>
-                        </li>
-                    ))}
+                    {paged.items.map((item) => {
+                        const { detail, summary } = describeItem(item)
+                        return (
+                            <li key={itemKey(item)} className="px-2 py-1.5">
+                                <p className="text-xs">
+                                    <span className="font-medium text-foreground">
+                                        {`Row ${item.row.sourceRow}`}
+                                    </span>
+                                    <span className="text-muted-foreground">{detail}</span>
+                                </p>
+                                <p
+                                    className="mt-0.5 truncate text-xs text-muted-foreground"
+                                    title={summary}
+                                >
+                                    {summary}
+                                </p>
+                            </li>
+                        )
+                    })}
                 </ul>
             )}
             {paged.loading && (

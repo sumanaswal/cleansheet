@@ -33,7 +33,13 @@ export interface PageResult {
     readonly rows: readonly Row[]
     readonly rowCount: number
     /** Present only while an operation is being previewed. One entry per row. */
+    /** Present only while a preview marks whole rows. One entry per row. */
     readonly marks?: readonly (RowMark | null)[]
+    /**
+     * Present only while a preview fills cells. One entry per row: the
+     * positions of the columns in that row that would be filled.
+     */
+    readonly cellMarks?: readonly (readonly number[])[]
 }
 
 export interface PreviewPage {
@@ -181,6 +187,7 @@ export function createImportClient(createWorker: () => WorkerLike): ImportClient
                 rows: response.rows,
                 rowCount: response.rowCount,
                 marks: response.marks,
+                cellMarks: response.cellMarks,
             }
         },
         async getProfile() {

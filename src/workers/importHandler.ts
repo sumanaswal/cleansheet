@@ -7,6 +7,7 @@ import type { Dataset } from '@/engine/types'
 import {
     applyToDataset,
     buildPreview,
+    countChangedCells,
     type OperationPreview,
 } from '@/workers/operations'
 import {
@@ -95,15 +96,20 @@ export function createImportHandler(
                     )
                     const rows = loaded.dataset.rows.slice(offset, offset + limit)
                     const active = preview
+                    const marks =
+                        active !== null && active.marksRows
+                            ? rows.map((_, i) => active.mark(offset + i))
+                            : undefined
+                    const cellMarks =
+                        active === null ? undefined : active.cellMarks(offset, rows.length)
                     return {
                         id: request.id,
                         type: 'page',
                         offset,
                         rows,
                         rowCount: loaded.dataset.rows.length,
-                        ...(active === null
-                            ? {}
-                            : { marks: rows.map((_, i) => active.mark(offset + i)) }),
+                        ...(marks === undefined ? {} : { marks }),
+                        ...(cellMarks === undefined ? {} : { cellMarks }),
                     }
                 }
                 case 'getProfile': {
@@ -154,10 +160,14 @@ export function createImportHandler(
                             result: {
                                 summary: summarize(loaded),
                                 removedRows: 0,
+                                filledCells: 0,
                                 historyDepth: history.length,
                             },
                         }
                     }
+                    const filling =
+                        request.operation.kind === 'missing' &&
+                        request.operation.options.action.kind === 'fill'
                     history.push(loaded.dataset)
                     while (history.length > maxHistory) history.shift()
                     const updated: ImportedFile = { ...loaded, dataset: next }
@@ -169,6 +179,7 @@ export function createImportHandler(
                         result: {
                             summary: summarize(updated),
                             removedRows: loaded.dataset.rows.length - next.rows.length,
+                            filledCells: filling ? countChangedCells(loaded.dataset, next) : 0,
                             historyDepth: history.length,
                         },
                     }

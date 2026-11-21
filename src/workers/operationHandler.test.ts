@@ -112,7 +112,7 @@ describe('operations in the worker: preview', () => {
         expect(first.itemCount).toBe(2)
         expect(first.items).toHaveLength(1)
         expect(first.items[0]?.row.sourceRow).toBe(4)
-        expect(first.items[0]?.keptSourceRow).toBe(2)
+        expect(first.items[0]).toMatchObject({ kind: 'removedRow', keptSourceRow: 2 })
 
         const second = expectType(previewPage(handle, 1, 10), 'previewPage')
         expect(second.items).toHaveLength(1)
