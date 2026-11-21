@@ -9,7 +9,12 @@ export function isMissing(value: CellValue | undefined): boolean {
     return typeof value === 'string' && value.trim() === ''
 }
 
-const PLACEHOLDERS: ReadonlySet<string> = new Set([
+/**
+ * Text that often stands in for a missing value, in lower case. The profile
+ * reports these as possible placeholders, and the missing-values operation
+ * offers them as choices.
+ */
+export const PLACEHOLDER_WORDS: readonly string[] = [
     'n/a',
     'na',
     '#n/a',
@@ -19,7 +24,9 @@ const PLACEHOLDERS: ReadonlySet<string> = new Set([
     'nan',
     '-',
     '--',
-])
+]
+
+const PLACEHOLDERS: ReadonlySet<string> = new Set(PLACEHOLDER_WORDS)
 
 /**
  * Text that often stands in for a missing value. It is only reported as a

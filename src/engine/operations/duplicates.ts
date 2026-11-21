@@ -1,5 +1,5 @@
 import { encodeRow, type KeyOptions } from '@/engine/cellKey'
-import { OperationError } from '@/engine/operations/types'
+import { resolveColumnIndexes } from '@/engine/operations/columns'
 import { isMissing } from '@/engine/profiling/missing'
 import type { CellValue, ColumnId, Dataset } from '@/engine/types'
 
@@ -43,23 +43,11 @@ function resolveColumns(
     columnIds: readonly ColumnId[] | null,
 ): number[] {
     if (columnIds === null) return dataset.columns.map((_, index) => index)
-    if (columnIds.length === 0) {
-        throw new OperationError('Choose at least one column to compare.')
-    }
-    const positions = new Map<ColumnId, number>(
-        dataset.columns.map((column, index) => [column.id, index] as const),
+    return resolveColumnIndexes(
+        dataset,
+        columnIds,
+        'Choose at least one column to compare.',
     )
-    const indexes = new Set<number>()
-    for (const id of columnIds) {
-        const position = positions.get(id)
-        if (position === undefined) {
-            throw new OperationError(
-                'One of the selected columns no longer exists. Please choose the columns again.',
-            )
-        }
-        indexes.add(position)
-    }
-    return [...indexes].sort((a, b) => a - b)
 }
 
 function isSkipped(
