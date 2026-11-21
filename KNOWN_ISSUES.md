@@ -85,17 +85,35 @@
 - Dates stored as text are recognised only by their shape (day or month first, year first, or with a month name). Nothing is interpreted, so 03/04/2026 is flagged as a date without deciding which part is the month.
 - The 90% rule for column types is a chosen value and has not been tested on real files.
 
-### 16. The profile does not refresh after cleaning
 
-- The worker keeps the profile until another file is imported or the data is cleared. Cleaning operations (Phase 5) will change the data, so they must clear the stored profile, and the Data Quality page must ask again.
-- Action: build this into the first cleaning operation, with a test.
 
 ### 17. The Data Quality page shows counts but not the rows behind them
 
 - It says how many duplicates, missing cells and negative numbers there are, but not where. The "show me these rows" view arrives with the Phase 5 previews.
+
+### 18. No undo yet
+
+- Apply cannot be reversed. The worker already keeps up to 10 earlier versions of the data, but nothing can use them until Phase 6.
+- Until then the only way to start over is to upload the file again.
+
+### 19. Choosing another worksheet discards cleaning
+
+- Switching worksheets re-reads the file, so any cleaning applied to the first sheet is lost. The screen says so.
+
+### 20. Preview and apply cost on large files is unmeasured
+
+- Apply recalculates from the settings and does not reuse the preview, so a large file is analysed twice.
+- Each stored version keeps its rows. Unchanged rows are shared, but operations that rewrite every row (column changes, text cleaning) will use more memory.
+- Action: measure in Phase 8 with 25,000 and 50,000-row files, then set the real history limit.
+
+### 21. Preview display limits
+
+- Table highlights cover only the page being viewed, and the preview list shows the first six non-empty values of each record.
+- The list shows records 20 at a time.
 
 ## Resolved
 
 - ESLint `react-refresh/only-export-components` error in the shadcn `button.tsx`: resolved with a folder-scoped rule exception.
 - Unused Vite template files (`App.css`, `src/assets`, `public/icons.svg`): deleted in Phase 2.
 - Template `README.md`: replaced in Phase 2.
+- The stored profile not refreshing after cleaning: resolved in Phase 5. Applying an operation discards the profile and the Data Quality page asks again (tested).

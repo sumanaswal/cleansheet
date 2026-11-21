@@ -46,7 +46,7 @@ Limits live in `IMPORT_LIMITS` (`src/engine/io/validation.ts`) and are shown in 
 
 ## Worker (`src/workers/`)
 
-- `protocol.ts`: request and response types. Requests are `import`, `getPage`, `getProfile` and `clear`. Responses are `imported`, `page`, `profile`, `cleared` and `error`.
+- `protocol.ts`: request and response types. Requests: `import`, `getPage`, `getProfile`, `previewOperation`, `getPreviewPage`, `clearPreview`, `applyOperation`, `clear`. Responses: `imported`, `page` (with row marks while a preview exists), `profile`, `previewed`, `previewPage`, `previewCleared`, `applied`, `cleared`, `error`.
 - `importHandler.ts`: `createImportHandler()` returns a function from request to response and owns the loaded dataset. It contains no browser code, so tests run it directly. Page requests are clamped (offset at least 0, limit between 1 and 500). The profile is computed the first time it is requested and kept until the data changes.
 - `import.worker.ts`: connects the handler to the browser's messaging.
 - `importClient.ts`: turns messages into promises. `cancel()` stops the worker, which discards the loaded data and rejects every waiting request. The next request starts a fresh worker.
@@ -70,7 +70,18 @@ The loaded dataset exists only inside the worker. The interface holds a summary 
 
 The interface asks for the profile through `getProfile`. `useDatasetProfile` never shows the profile of earlier data.
 
+## Cleaning operations (`src/engine/operations/`, `src/workers/operations.ts`)
+
+Every operation has two stages, and the worker owns the data for both:
+
+1. **Preview.** `buildPreview(dataset, operation)` works out what would change and changes nothing. The worker keeps the result and returns only counts. The interface then asks for a page of affected records, and each page of table rows comes back with a mark per row so affected rows can be highlighted.
+2. **Apply.** `applyToDataset(dataset, operation)` recalculates from the settings (it never trusts a stored preview) and returns a new dataset, or the same object when nothing changes. The worker then pushes the previous dataset onto a history capped at 10 (unchanged rows are shared between versions), discards the stored profile and preview, and replies with a new summary object.
+
+Problems with the settings are an `OperationError`, shown to the user as they are.
+
+Operations are described by an `OperationSpec` in `protocol.ts`. Each new module adds a kind there and a case in `workers/operations.ts`.
+
 ## Planned and not built
 
-- Cleaning operations (Phase 5), undo and redo (Phase 6), export (Phase 7)
+- More cleaning operations (missing values, text, dates, columns), undo and redo (Phase 6), export (Phase 7).
 - Undo history is planned as stored changes or shared unchanged rows, with a capped length, not full copies. This has not been designed in detail or measured.

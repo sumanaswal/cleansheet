@@ -165,3 +165,40 @@ Decisions made beyond those five:
 
 - Time to analyze 25,000 and 50,000-row files, and memory use during duplicate detection (see KNOWN_ISSUES.md).
 - Behaviour on real-world files with unusual number and date text formats.
+
+
+## Phase 5, module 1: Remove duplicates (2026-11-18 to 2026-11-21)
+
+Status: complete. Timing and memory for large files are NOT measured yet (Phase 8).
+
+### What was built
+
+- **Engine** (`src/engine/operations/duplicates.ts`): `planDuplicateRemoval` (the preview stage, changes nothing) and `removeDuplicates` (the apply stage). Row matching lives in the shared `src/engine/cellKey.ts`, which the profiler also uses, so the Data Quality "Duplicate rows" figure and this operation cannot disagree (a test checks it).
+- **Worker** (`src/workers/`): new requests `previewOperation`, `getPreviewPage`, `clearPreview`, `applyOperation`. The preview is kept in the worker. Apply recalculates from the settings and never trusts a stored preview. Rows come back with a mark per row (`remove` or `keep`) while a preview exists, in the same reply as the rows.
+- **Screen**: a Remove duplicates panel with column choice, keep first or last, matching options, a Preview button, counts, a paged list of the rows that would go (each with the row that stays), highlights in the table, Apply and Cancel.
+- **Version history in the worker**: each effective apply stores the previous dataset, up to 10. Unchanged rows are shared between versions. There is no Undo button yet (Phase 6).
+
+### Decisions (accepted by the developer)
+
+1. History groundwork now, buttons in Phase 6.
+2. The Row column keeps the original file's numbers, so removed rows leave gaps.
+3. The preview shows exact counts, a paged list of affected records and highlights in the table.
+4. Rules: with all columns, fully empty rows are never duplicates. With selected columns, a row with any chosen column missing is never compared (so two blank phone numbers are not a match). Matching is exact by default. Optional: ignore case, ignore extra spaces (text only: numbers, dates and true/false are never altered, and the number 1 still differs from the text "1"). Keep first or last leaves the kept row where it is and never reorders.
+
+Smaller decisions:
+- With "ignore extra spaces" on, a whitespace-only cell counts as an empty cell.
+- The preview is a button and not live, so changing a setting does not make a large file recalculate on every click. Any change to a setting discards the preview and its highlights, and Apply stays disabled until the preview matches the settings.
+- A failed preview discards the previous one, so stale highlights cannot survive a bad setting.
+- Applying discards the stored profile and preview, and the summary is a new object, so the table and the Data Quality page reload on their own.
+- An apply that changes nothing adds no history entry and keeps the profile.
+- The panel states that Apply cannot be undone yet. Choosing another worksheet warns that it discards cleaning.
+
+### Verified
+
+- `npx tsc -b`, `npm run lint`, `npm test` and `npm run build` pass.
+- The developer tried the duplicate screen by hand with a generated file with known duplicates, and reported that it worked.
+
+### Not yet done or verified
+
+- Time to preview and apply on 25,000 and 50,000-row files, and memory with up to 10 stored versions.
+- The real Web Worker handles the new messages: only the stand-in is covered by automated tests.
