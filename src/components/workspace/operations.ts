@@ -54,4 +54,7 @@ export const OPERATION_GROUPS: readonly OperationGroup[] = [
 ]
 
 /** Operations that are built. The others stay disabled until their module exists. */
-export const AVAILABLE_OPERATIONS: ReadonlySet<string> = new Set(['duplicates'])
+export const AVAILABLE_OPERATIONS: ReadonlySet<string> = new Set([
+    'duplicates',
+    'missing',
+])

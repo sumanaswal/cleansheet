@@ -13,6 +13,7 @@ interface Fetched {
   readonly refreshKey: number
   readonly rows: readonly Row[]
   readonly marks: readonly (RowMark | null)[] | undefined
+  readonly cellMarks: readonly (readonly number[])[] | undefined
 }
 
 interface Failure {
@@ -33,6 +34,11 @@ export interface PagedRows {
    * are still being loaded, so old marks are never shown.
    */
   readonly marks: readonly (RowMark | null)[] | undefined
+  /**
+   * For each row, the positions of the columns that a preview would fill.
+   * Undefined in the same situations as `marks`.
+   */
+  readonly cellMarks: readonly (readonly number[])[] | undefined
   readonly loading: boolean
   readonly error: string | null
   goToPage(index: number): void
@@ -75,6 +81,7 @@ export function usePagedRows(
           refreshKey,
           rows: page.rows,
           marks: page.marks,
+          cellMarks: page.cellMarks,
         })
       },
       (error: unknown) => {
@@ -104,8 +111,7 @@ export function usePagedRows(
   )
 
   const current = fetched !== null && fetched.version === version ? fetched : null
-  const marks =
-    current !== null && current.refreshKey === refreshKey ? current.marks : undefined
+  const fresh = current !== null && current.refreshKey === refreshKey
   const error =
     failure !== null && failure.version === version && failure.index === pageIndex
       ? failure.message
@@ -116,7 +122,8 @@ export function usePagedRows(
     pageIndex,
     pageCount,
     rows: current?.rows ?? [],
-    marks,
+    marks: fresh ? current.marks : undefined,
+    cellMarks: fresh ? current.cellMarks : undefined,
     loading,
     error,
     goToPage,

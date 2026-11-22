@@ -51,7 +51,7 @@ describe('CleanSpreadsheetPage', () => {
         const enabled = buttons
             .filter((button) => !button.hasAttribute('disabled'))
             .map((button) => button.textContent)
-        expect(enabled).toEqual(['Remove duplicates'])
+        expect(enabled).toEqual(['Remove duplicates', 'Missing values'])
         await screen.findByText('Zoe')
     })
 

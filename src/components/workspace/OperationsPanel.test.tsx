@@ -23,7 +23,7 @@ describe('OperationsPanel', () => {
             .getAllByRole('button')
             .filter((button) => !button.hasAttribute('disabled'))
             .map((button) => button.textContent)
-        expect(enabled).toEqual(['Remove duplicates'])
+        expect(enabled).toEqual(['Remove duplicates', 'Missing values'])
         expect(
             screen.getByText('Greyed-out operations are added in later development phases.'),
         ).toBeInTheDocument()

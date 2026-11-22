@@ -8,6 +8,11 @@ interface DataTableProps {
     rows: readonly Row[]
     /** How each row is marked while an operation is being previewed. One entry per row. */
     marks?: readonly (RowMark | null)[]
+    /**
+     * For each row, the positions of the columns whose cell would be filled
+     * while an operation is being previewed. One entry per row.
+     */
+    cellMarks?: readonly (readonly number[])[]
 }
 
 const KIND_CLASS: Record<CellKind, string> = {
@@ -29,7 +34,7 @@ const HEADER_CLASS: Record<RowMark, string> = {
     keep: 'bg-sky-100',
 }
 
-export function DataTable({ columns, rows, marks }: DataTableProps) {
+export function DataTable({ columns, rows, marks, cellMarks }: DataTableProps) {
     return (
         <div
             role="region"
@@ -62,6 +67,7 @@ export function DataTable({ columns, rows, marks }: DataTableProps) {
                 <tbody>
                     {rows.map((row, rowIndex) => {
                         const mark = marks?.[rowIndex] ?? null
+                        const filled = cellMarks?.[rowIndex]
                         return (
                             <tr key={row.sourceRow} className={mark === null ? '' : ROW_CLASS[mark]}>
                                 <th
@@ -83,15 +89,26 @@ export function DataTable({ columns, rows, marks }: DataTableProps) {
                                 </th>
                                 {columns.map((column, index) => {
                                     const display = displayCell(row.cells[index])
+                                    const willFill = filled?.includes(index) === true
+                                    const kindClass =
+                                        willFill && display.kind === 'empty'
+                                            ? ''
+                                            : KIND_CLASS[display.kind]
                                     return (
                                         <td
                                             key={column.id}
-                                            title={display.title}
+                                            title={willFill ? 'Will be filled' : display.title}
                                             className={cn(
                                                 'max-w-[20rem] overflow-hidden text-ellipsis whitespace-pre border-b border-r px-3 py-1.5 text-foreground',
-                                                KIND_CLASS[display.kind],
+                                                kindClass,
+                                                willFill && 'bg-amber-100 ring-1 ring-inset ring-amber-400',
                                             )}
                                         >
+                                            {willFill && (
+                                                <span className="mr-1 text-[10px] font-semibold uppercase">
+                                                    Fill
+                                                </span>
+                                            )}
                                             {display.kind === 'empty' ? (
                                                 <span className="sr-only">empty</span>
                                             ) : (
