@@ -80,6 +80,7 @@ Every operation has two stages, and the worker owns the data for both:
 Problems with the settings are an `OperationError`, shown to the user as they are.
 
 Operations are described by an `OperationSpec` in `protocol.ts`. Each new module adds a kind there and a case in `workers/operations.ts`.
+Table pages can carry two kinds of marks while a preview exists: `marks` (one per row, for operations that remove or keep whole rows) and `cellMarks` (for each row, the positions of cells that would change). The preview list holds records of several kinds (`removedRow`, `filledCell`, `removedMissingRow`), and each carries its whole row. Cell marks are found by a binary search over the list of changed cells, which is sorted by row, so a page of highlights does not need one object per changed cell.
 
 ## Planned and not built
 

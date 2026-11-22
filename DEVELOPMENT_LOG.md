@@ -202,3 +202,79 @@ Smaller decisions:
 
 - Time to preview and apply on 25,000 and 50,000-row files, and memory with up to 10 stored versions.
 - The real Web Worker handles the new messages: only the stand-in is covered by automated tests.
+
+
+## Phase 5, module 2: Missing values (2026-11-21 to 2026-11-22)
+
+Status: complete. Timing and memory for large files are NOT measured yet (Phase 8).
+
+### What was built
+
+- **Engine** (`src/engine/operations/missingValues.ts`): `planMissingValues` (preview stage, changes nothing) and `applyMissingValues` (apply stage). Two actions share one column selection: fill the missing cells with a typed value, or remove rows with missing values ("any chosen column" or "all chosen columns").
+- **Shared pieces:** `src/engine/operations/columns.ts` (turns chosen column ids into positions, now used by duplicates too) and `PLACEHOLDER_WORDS` in `src/engine/profiling/missing.ts` (one list used by the profile and by the panel's checkboxes, checked by a test).
+- **Worker:** a `missing` operation kind. The preview summary has an optional `missing` field with per-column details. Table pages can carry `cellMarks` (the columns that would be filled in each row), separate from the row `marks` used for duplicates. Three kinds of preview record: `removedRow`, `filledCell` (old and new value) and `removedMissingRow` (with the missing columns). The apply result reports `filledCells`, counted by comparing old and new rows.
+- **Screen:** a Missing values panel with fill or remove, a value box, any/all, a column list (every column ticked at the start, unticking ignores a column), nine placeholder checkboxes (all off) and a box for the user's own placeholders. The preview has counts, a per-column table (including whether the value goes in as text or number), a paged record list and highlights: filled cells show an amber background and a "Fill" tag, removed rows show "Remove".
+
+### Decisions (accepted by the developer)
+
+1. Missing means an empty cell or only whitespace, always. Placeholder words count only when ticked or typed. Zero, false and other numbers are never missing.
+2. Two actions in one panel with one column selection, with every column ticked at the start.
+3. A typed value is inserted as text, except into a column whose remaining values are all numbers, and only if the typed text is a plain number. A date column gets text, with a warning. No averages or "fill from above".
+4. The preview shows a per-column table, a paged list of records and highlights on the current page.
+5. Highlights show only while a preview exists.
+
+Rules added beyond those (not rejected by the developer):
+- A placeholder that is a number (0, -5, 1,000, 007) or true/false is refused with a message. Cost: a file that uses 999 or -1 as a missing code cannot be handled here.
+- The fill value has its end spaces removed. A blank value is refused. A value that would itself count as missing under the chosen settings is refused.
+- A number is inserted only when the typed text reads back exactly the same: 5 and -3 become numbers, but 05, 5.0, 0.50, 1e3, +5 and -0 stay text.
+- A column with nothing left once the missing cells are set aside gets text.
+- Placeholders do not count when deciding whether a column is numeric.
+
+### Verified
+
+- `npx tsc -b`, `npm run lint`, `npm test` and `npm run build` pass (472 tests in 48 files).
+- A test checks that the missing-cell and placeholder counts agree with the Data Quality page.
+- The developer tried the screen by hand with a generated file with known missing cells, and reported that it worked.
+
+### Not yet done or verified
+
+- Time to preview and apply on 25,000 and 50,000-row files.
+- Behaviour with real-world placeholder conventions.
+
+
+## Phase 5, module 2: Missing values (2026-11-21 to 2026-11-22)
+
+Status: complete. Timing and memory for large files are NOT measured yet (Phase 8).
+
+### What was built
+
+- **Engine** (`src/engine/operations/missingValues.ts`): `planMissingValues` (preview stage, changes nothing) and `applyMissingValues` (apply stage). Two actions share one column selection: fill the missing cells with a typed value, or remove rows with missing values ("any chosen column" or "all chosen columns").
+- **Shared pieces:** `src/engine/operations/columns.ts` (turns chosen column ids into positions, now used by duplicates too) and `PLACEHOLDER_WORDS` in `src/engine/profiling/missing.ts` (one list used by the profile and by the panel's checkboxes, checked by a test).
+- **Worker:** a `missing` operation kind. The preview summary has an optional `missing` field with per-column details. Table pages can carry `cellMarks` (the columns that would be filled in each row), separate from the row `marks` used for duplicates. Three kinds of preview record: `removedRow`, `filledCell` (old and new value) and `removedMissingRow` (with the missing columns). The apply result reports `filledCells`, counted by comparing old and new rows.
+- **Screen:** a Missing values panel with fill or remove, a value box, any/all, a column list (every column ticked at the start, unticking ignores a column), nine placeholder checkboxes (all off) and a box for the user's own placeholders. The preview has counts, a per-column table (including whether the value goes in as text or number), a paged record list and highlights: filled cells show an amber background and a "Fill" tag, removed rows show "Remove".
+
+### Decisions (accepted by the developer)
+
+1. Missing means an empty cell or only whitespace, always. Placeholder words count only when ticked or typed. Zero, false and other numbers are never missing.
+2. Two actions in one panel with one column selection, with every column ticked at the start.
+3. A typed value is inserted as text, except into a column whose remaining values are all numbers, and only if the typed text is a plain number. A date column gets text, with a warning. No averages or "fill from above".
+4. The preview shows a per-column table, a paged list of records and highlights on the current page.
+5. Highlights show only while a preview exists.
+
+Rules added beyond those (not rejected by the developer):
+- A placeholder that is a number (0, -5, 1,000, 007) or true/false is refused with a message. Cost: a file that uses 999 or -1 as a missing code cannot be handled here.
+- The fill value has its end spaces removed. A blank value is refused. A value that would itself count as missing under the chosen settings is refused.
+- A number is inserted only when the typed text reads back exactly the same: 5 and -3 become numbers, but 05, 5.0, 0.50, 1e3, +5 and -0 stay text.
+- A column with nothing left once the missing cells are set aside gets text.
+- Placeholders do not count when deciding whether a column is numeric.
+
+### Verified
+
+- `npx tsc -b`, `npm run lint`, `npm test` and `npm run build` pass (472 tests in 48 files).
+- A test checks that the missing-cell and placeholder counts agree with the Data Quality page.
+- The developer tried the screen by hand with a generated file with known missing cells, and reported that it worked.
+
+### Not yet done or verified
+
+- Time to preview and apply on 25,000 and 50,000-row files.
+- Behaviour with real-world placeholder conventions.

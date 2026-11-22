@@ -111,6 +111,19 @@
 - Table highlights cover only the page being viewed, and the preview list shows the first six non-empty values of each record.
 - The list shows records 20 at a time.
 
+### 22. Missing values: limits
+
+- A placeholder that is a number or true/false cannot be treated as missing, so codes like 999 or -1 are not handled.
+- One value is inserted into every chosen column. There is no per-column value.
+- A CSV file stores every value as text, so filling a quantity column of a CSV file inserts the text "0", not the number 0. Only XLSX number columns get numbers. The preview says "Text" or "Number" for each column.
+- A date column gets text, not a real date. Date conversion belongs to the dates module.
+- Highlights cover only the page of the table being viewed.
+
+### 23. Preview and apply code is repeated in each operation panel
+
+- The duplicates panel and the missing-values panel repeat the same handling of preview, apply, cancel and stale answers.
+- Action: move it into one shared hook when the third module is built, once it is clear what really repeats.
+
 ## Resolved
 
 - ESLint `react-refresh/only-export-components` error in the shadcn `button.tsx`: resolved with a folder-scoped rule exception.
