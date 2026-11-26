@@ -250,7 +250,7 @@ describe('operations in the worker: apply', () => {
 
 describe('operations in the worker: version history', () => {
     it('keeps a limited number of earlier versions', () => {
-        expect(MAX_HISTORY_DEPTH).toBe(10)
+        expect(MAX_HISTORY_DEPTH).toBe(5)
         const handle = createImportHandler(2)
         load(handle, STAGES)
         const depths = ['c1', 'c2', 'c3'].map(

@@ -13,8 +13,12 @@ import type {
 export const MAX_PAGE_SIZE = 500
 /** Largest page of preview records the worker will return in one reply. */
 export const MAX_PREVIEW_PAGE_SIZE = 100
-/** How many earlier versions of the data the worker keeps. */
-export const MAX_HISTORY_DEPTH = 10
+/**
+ * How many earlier versions of the data the worker keeps. Lowered from 10 to 5
+ * because text cleaning can rewrite most of a large sheet, and each version
+ * keeps its rows in memory. Phase 8 measurements may raise it.
+ */
+export const MAX_HISTORY_DEPTH = 5
 
 /** Everything the interface needs to know about a loaded spreadsheet. */
 export interface DatasetSummary {
