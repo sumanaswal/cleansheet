@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { displayCell } from '@/components/workspace/cellDisplay'
+import { showInvisible } from '@/components/workspace/visibleText'
 import { PREVIEW_PAGE_SIZE, usePreviewItems } from '@/hooks/usePreviewItems'
 import type { CellValue } from '@/engine/types'
 import type { PreviewPage } from '@/workers/importClient'
@@ -48,11 +49,17 @@ function describeItem(item: PreviewItem): { detail: string; summary: string } {
                 detail: ` · missing in: ${item.missingColumns.map((column) => column.name).join(', ')}`,
                 summary: summarizeRow(item.row.cells),
             }
+        case 'changedText':
+            return {
+                detail: ` · column ${item.columnPosition}: ${item.columnName}`,
+                summary: `${showInvisible(item.oldText)} → ${item.newText === null ? '(empty)' : showInvisible(item.newText)
+                    }`,
+            }
     }
 }
 
 function itemKey(item: PreviewItem): string {
-    return item.kind === 'filledCell'
+    return item.kind === 'filledCell' || item.kind === 'changedText'
         ? `${item.row.sourceRow}:${item.columnPosition}`
         : `${item.row.sourceRow}`
 }

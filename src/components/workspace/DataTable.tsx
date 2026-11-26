@@ -9,10 +9,12 @@ interface DataTableProps {
     /** How each row is marked while an operation is being previewed. One entry per row. */
     marks?: readonly (RowMark | null)[]
     /**
-     * For each row, the positions of the columns whose cell would be filled
+     * For each row, the positions of the columns whose cell would change
      * while an operation is being previewed. One entry per row.
      */
     cellMarks?: readonly (readonly number[])[]
+    /** Whether marked cells would be filled with a value or have their text changed. */
+    cellMarkKind?: 'fill' | 'change'
 }
 
 const KIND_CLASS: Record<CellKind, string> = {
@@ -34,7 +36,16 @@ const HEADER_CLASS: Record<RowMark, string> = {
     keep: 'bg-sky-100',
 }
 
-export function DataTable({ columns, rows, marks, cellMarks }: DataTableProps) {
+export function DataTable({
+    columns,
+    rows,
+    marks,
+    cellMarks,
+    cellMarkKind = 'fill',
+}: DataTableProps) {
+    const cellLabel = cellMarkKind === 'change' ? 'Change' : 'Fill'
+    const cellTitle = cellMarkKind === 'change' ? 'Will be changed' : 'Will be filled'
+
     return (
         <div
             role="region"
@@ -67,7 +78,7 @@ export function DataTable({ columns, rows, marks, cellMarks }: DataTableProps) {
                 <tbody>
                     {rows.map((row, rowIndex) => {
                         const mark = marks?.[rowIndex] ?? null
-                        const filled = cellMarks?.[rowIndex]
+                        const changing = cellMarks?.[rowIndex]
                         return (
                             <tr key={row.sourceRow} className={mark === null ? '' : ROW_CLASS[mark]}>
                                 <th
@@ -89,24 +100,24 @@ export function DataTable({ columns, rows, marks, cellMarks }: DataTableProps) {
                                 </th>
                                 {columns.map((column, index) => {
                                     const display = displayCell(row.cells[index])
-                                    const willFill = filled?.includes(index) === true
+                                    const willChange = changing?.includes(index) === true
                                     const kindClass =
-                                        willFill && display.kind === 'empty'
+                                        willChange && display.kind === 'empty'
                                             ? ''
                                             : KIND_CLASS[display.kind]
                                     return (
                                         <td
                                             key={column.id}
-                                            title={willFill ? 'Will be filled' : display.title}
+                                            title={willChange ? cellTitle : display.title}
                                             className={cn(
                                                 'max-w-[20rem] overflow-hidden text-ellipsis whitespace-pre border-b border-r px-3 py-1.5 text-foreground',
                                                 kindClass,
-                                                willFill && 'bg-amber-100 ring-1 ring-inset ring-amber-400',
+                                                willChange && 'bg-amber-100 ring-1 ring-inset ring-amber-400',
                                             )}
                                         >
-                                            {willFill && (
+                                            {willChange && (
                                                 <span className="mr-1 text-[10px] font-semibold uppercase">
-                                                    Fill
+                                                    {cellLabel}
                                                 </span>
                                             )}
                                             {display.kind === 'empty' ? (

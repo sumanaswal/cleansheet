@@ -45,19 +45,21 @@ function LoadedPreview({ summary, getPage, refreshKey }: LoadedPreviewProps) {
                         rows={paged.rows}
                         marks={paged.marks}
                         cellMarks={paged.cellMarks}
+                        cellMarkKind={paged.cellMarkKind}
                     />
                     {paged.marks !== undefined && (
                         <p className="text-xs text-foreground">
                             {`Rows marked Remove would be removed.${paged.marks.includes('keep')
-                                    ? ' Rows marked Keep are the copies that stay.'
-                                    : ''
+                                ? ' Rows marked Keep are the copies that stay.'
+                                : ''
                                 } Nothing has been changed yet.`}
                         </p>
                     )}
                     {paged.cellMarks !== undefined && (
                         <p className="text-xs text-foreground">
-                            Cells marked Fill would be filled with the value you typed.
-                            Nothing has been changed yet.
+                            {paged.cellMarkKind === 'change'
+                                ? 'Cells marked Change would be rewritten with the cleaned text. Nothing has been changed yet.'
+                                : 'Cells marked Fill would be filled with the value you typed. Nothing has been changed yet.'}
                         </p>
                     )}
                     {summary.rowCount === 0 && (

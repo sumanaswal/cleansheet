@@ -100,6 +100,7 @@ export function makeSession(
             summary: makeSummary(),
             removedRows: 0,
             filledCells: 0,
+            changedCells: 0,
             historyDepth: 0,
         }),
         ...overrides,

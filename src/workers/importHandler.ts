@@ -109,7 +109,9 @@ export function createImportHandler(
                         rows,
                         rowCount: loaded.dataset.rows.length,
                         ...(marks === undefined ? {} : { marks }),
-                        ...(cellMarks === undefined ? {} : { cellMarks }),
+                        ...(active === null || cellMarks === undefined
+                            ? {}
+                            : { cellMarks, cellMarkKind: active.cellMarkKind }),
                     }
                 }
                 case 'getProfile': {
@@ -161,13 +163,20 @@ export function createImportHandler(
                                 summary: summarize(loaded),
                                 removedRows: 0,
                                 filledCells: 0,
+                                changedCells: 0,
                                 historyDepth: history.length,
                             },
                         }
                     }
-                    const filling =
-                        request.operation.kind === 'missing' &&
-                        request.operation.options.action.kind === 'fill'
+                    const operation = request.operation
+                    const filledCells =
+                        operation.kind === 'missing' && operation.options.action.kind === 'fill'
+                            ? countChangedCells(loaded.dataset, next)
+                            : 0
+                    const changedCells =
+                        operation.kind === 'text'
+                            ? countChangedCells(loaded.dataset, next)
+                            : 0
                     history.push(loaded.dataset)
                     while (history.length > maxHistory) history.shift()
                     const updated: ImportedFile = { ...loaded, dataset: next }
@@ -179,7 +188,8 @@ export function createImportHandler(
                         result: {
                             summary: summarize(updated),
                             removedRows: loaded.dataset.rows.length - next.rows.length,
-                            filledCells: filling ? countChangedCells(loaded.dataset, next) : 0,
+                            filledCells,
+                            changedCells,
                             historyDepth: history.length,
                         },
                     }

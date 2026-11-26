@@ -40,6 +40,8 @@ export interface PageResult {
      * positions of the columns in that row that would be filled.
      */
     readonly cellMarks?: readonly (readonly number[])[]
+    /** Present with `cellMarks`: whether the cells would be filled or changed. */
+    readonly cellMarkKind?: 'fill' | 'change'
 }
 
 export interface PreviewPage {
@@ -188,6 +190,7 @@ export function createImportClient(createWorker: () => WorkerLike): ImportClient
                 rowCount: response.rowCount,
                 marks: response.marks,
                 cellMarks: response.cellMarks,
+                cellMarkKind: response.cellMarkKind,
             }
         },
         async getProfile() {

@@ -14,6 +14,7 @@ interface Fetched {
   readonly rows: readonly Row[]
   readonly marks: readonly (RowMark | null)[] | undefined
   readonly cellMarks: readonly (readonly number[])[] | undefined
+  readonly cellMarkKind: 'fill' | 'change' | undefined
 }
 
 interface Failure {
@@ -39,6 +40,8 @@ export interface PagedRows {
    * Undefined in the same situations as `marks`.
    */
   readonly cellMarks: readonly (readonly number[])[] | undefined
+  /** Whether marked cells would be filled or changed. Undefined with no cell marks. */
+  readonly cellMarkKind: 'fill' | 'change' | undefined
   readonly loading: boolean
   readonly error: string | null
   goToPage(index: number): void
@@ -82,6 +85,7 @@ export function usePagedRows(
           rows: page.rows,
           marks: page.marks,
           cellMarks: page.cellMarks,
+          cellMarkKind: page.cellMarkKind,
         })
       },
       (error: unknown) => {
@@ -124,6 +128,7 @@ export function usePagedRows(
     rows: current?.rows ?? [],
     marks: fresh ? current.marks : undefined,
     cellMarks: fresh ? current.cellMarks : undefined,
+    cellMarkKind: fresh ? current.cellMarkKind : undefined,
     loading,
     error,
     goToPage,
